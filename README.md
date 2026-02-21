@@ -10,6 +10,8 @@ This repository contains reusable skills for interacting with Coval's evaluation
 
 | Category | Description |
 |----------|-------------|
+| [Runs](./skills/runs/) | Launch and monitor evaluation runs |
+| [Simulations](./skills/simulations/) | Analyze results and download audio |
 | [Agents](./skills/agents/) | Create, configure, and manage AI agents |
 | [Personas](./skills/personas/) | Define simulation personas for testing |
 | [Test Cases](./skills/test-cases/) | Build and organize evaluation test cases (includes HuggingFace import) |
@@ -48,6 +50,7 @@ argument-hint: "[expected-arguments]"
 
 ## Requirements
 
+- Coval CLI (`brew install coval-ai/tap/coval`)
 - Coval API access ([coval.dev](https://coval.dev))
 - API key with appropriate permissions
 
