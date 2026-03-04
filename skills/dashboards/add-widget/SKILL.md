@@ -1,6 +1,6 @@
 ---
 name: add-widget
-description: Add a chart, table, or text widget to a Coval dashboard. Use when user wants to add a visualization or metric to a dashboard.
+description: Add a chart, table, or text widget to a Coval dashboard. Use when user says "add a widget", "add a chart", "add a metric to the dashboard", "put a graph on my dashboard", or "add visualization".
 argument-hint: "[dashboard-id]"
 ---
 
@@ -8,9 +8,10 @@ argument-hint: "[dashboard-id]"
 
 Add a widget to dashboard `$ARGUMENTS`.
 
-## Prerequisites
+## Instructions
 
-Ensure the Coval CLI is installed and authenticated:
+### Step 1: Verify CLI Authentication
+
 ```bash
 coval whoami
 ```
@@ -21,9 +22,7 @@ If no dashboard ID provided, list available dashboards:
 coval dashboards list
 ```
 
-## Workflow
-
-### Step 1: Determine Widget Type
+### Step 2: Determine Widget Type
 
 Ask the user what they want to add:
 
@@ -33,7 +32,7 @@ Ask the user what they want to add:
 | `table` | Metric comparison table | Side-by-side metric values |
 | `text` | Markdown text block | Notes, descriptions, headers |
 
-### Step 2: Configure Widget
+### Step 3: Configure Widget
 
 #### For Chart Widgets
 
@@ -44,17 +43,9 @@ coval metrics list
 coval metrics list --include-builtin
 ```
 
-Build the config JSON with required fields:
+Build the config JSON. Required fields: `metricId`, `visualizationType`, `monitoring`, `aggregation`, `metricOutputType`.
 
-| Field | Description | Values |
-|-------|-------------|--------|
-| `metricId` | Metric to visualize | Metric ID string |
-| `visualizationType` | Chart type | `line`, `bar`, `area`, `statistic`, `pie`, `histogram`, `top-list` |
-| `monitoring` | Data source | `Monitoring` or `Simulations` |
-| `aggregation` | Aggregation method | `sum`, `count`, `avg`, `max`, `min`, `success` |
-| `metricOutputType` | Metric value type | `string` or `float` |
-
-Optional fields: `bucketInterval`, `groupBy`, `precision`, `units`, `showAsPercentage`, `xAxisLabel`, `yAxisLabel`, `filters`
+See `references/grid-layout.md` for the full config reference and valid values.
 
 #### For Table Widgets
 
@@ -68,18 +59,11 @@ Optional fields: `bucketInterval`, `groupBy`, `precision`, `units`, `showAsPerce
 {"text": "## Section Header\nMarkdown content here."}
 ```
 
-### Step 3: Choose Size
+### Step 4: Choose Size
 
-Refer to the grid constraints (48-column grid):
+Consult `references/grid-layout.md` for the 48-column grid constraints and widget-type minimums before choosing dimensions.
 
-| Widget Type | Min Width | Min Height | Default Width | Default Height | Notes |
-|-------------|-----------|------------|---------------|----------------|-------|
-| `chart` | 12 | 8 | 12 | 8 | — |
-| `chart` (statistic) | 10 | 12 | 12 | 12 | Max width: 24 |
-| `table` | 4 | 8 | 48 | 8 | Defaults to full width |
-| `text` | 12 | 2 | 16 | 2 | Fixed height of 2 |
-
-### Step 4: Create Widget
+### Step 5: Create Widget
 
 ```bash
 coval dashboards widgets create <dashboard_id> \
@@ -90,9 +74,9 @@ coval dashboards widgets create <dashboard_id> \
   --config '<json>'
 ```
 
-### Step 5: Verify
+### Step 6: Verify
 
-Check the **returned** grid values — the server may adjust dimensions to enforce minimums:
+CRITICAL: Check the **returned** grid values — the server may adjust dimensions to enforce minimums:
 
 ```bash
 coval dashboards widgets list <dashboard_id> --format json
@@ -122,16 +106,6 @@ coval dashboards widgets create <dashboard_id> \
   --config '{"metricId": "29BlkepvvX19ebbLDB0y6Q", "visualizationType": "line", "monitoring": "Simulations", "aggregation": "avg", "metricOutputType": "float"}'
 ```
 
-### Pie Chart Widget
-
-```bash
-coval dashboards widgets create <dashboard_id> \
-  --name "Agent Repeats Itself" \
-  --type chart \
-  --width 16 --height 12 \
-  --config '{"metricId": "ESsGkF2vyX3En7TsS5t38e", "visualizationType": "pie", "monitoring": "Simulations", "aggregation": "count", "metricOutputType": "string"}'
-```
-
 ### Table Widget
 
 ```bash
@@ -142,12 +116,16 @@ coval dashboards widgets create <dashboard_id> \
   --config '{"metricIds": ["29BlkepvvX19ebbLDB0y6Q", "7VHk6dTjvBcuV6XYPmaeGq"], "monitoring": "Simulations", "aggregation": "avg", "metricOutputType": "float"}'
 ```
 
-### Text Widget
+## Troubleshooting
 
-```bash
-coval dashboards widgets create <dashboard_id> \
-  --name "Dashboard Notes" \
-  --type text \
-  --width 48 --height 2 \
-  --config '{"text": "## Q1 Agent Performance\nTracking key metrics across all simulation runs."}'
-```
+### "Invalid request body" error
+Cause: Config JSON is malformed or missing required fields.
+Solution: Chart widgets require all of: `metricId`, `visualizationType`, `monitoring`, `aggregation`, `metricOutputType`.
+
+### Widget created with null grid positions
+Cause: The API does not auto-assign `grid_x`/`grid_y` on creation.
+Solution: Update the widget with explicit positions using `coval dashboards widgets update`.
+
+### Widget dimensions differ from requested
+Cause: The server enforces minimum sizes per widget type.
+Solution: Consult `references/grid-layout.md` for valid dimensions.

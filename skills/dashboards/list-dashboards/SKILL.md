@@ -1,6 +1,6 @@
 ---
 name: list-dashboards
-description: List all Coval dashboards. Use when user wants to see available dashboards or find a dashboard ID.
+description: List all Coval dashboards with filtering and pagination. Use when user says "list dashboards", "show my dashboards", "find a dashboard", or "what dashboards do I have".
 argument-hint: ""
 ---
 
@@ -8,16 +8,15 @@ argument-hint: ""
 
 List all available dashboards.
 
-## Prerequisites
+## Instructions
 
-Ensure the Coval CLI is installed and authenticated:
+### Step 1: Verify CLI Authentication
+
 ```bash
 coval whoami
 ```
 
-## Workflow
-
-### Step 1: List Dashboards
+### Step 2: List Dashboards
 
 ```bash
 coval dashboards list
@@ -29,7 +28,7 @@ For JSON output with full details:
 coval dashboards list --format json
 ```
 
-### Step 2: Filter or Page (Optional)
+### Step 3: Filter or Page (Optional)
 
 ```bash
 # Custom page size
@@ -39,7 +38,7 @@ coval dashboards list --page-size 100
 coval dashboards list --order-by display_name
 ```
 
-### Step 3: Present Results
+### Step 4: Present Results
 
 Show the user:
 - Dashboard ID

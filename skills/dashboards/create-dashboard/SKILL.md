@@ -1,6 +1,6 @@
 ---
 name: create-dashboard
-description: Create a new Coval dashboard and populate it with metric widgets. Use when user wants to build a dashboard or visualize evaluation results.
+description: Create a new Coval dashboard and populate it with metric widgets. Use when user says "create a dashboard", "build a dashboard", "visualize my metrics", "set up a performance dashboard", or "make a dashboard for my runs".
 argument-hint: "[dashboard-name]"
 ---
 
@@ -8,18 +8,17 @@ argument-hint: "[dashboard-name]"
 
 Create a new dashboard for `$ARGUMENTS`.
 
-## Prerequisites
+## Instructions
 
-Ensure the Coval CLI is installed and authenticated:
+### Step 1: Verify CLI Authentication
+
 ```bash
 coval whoami
 ```
 
 If not authenticated, run `coval login` first.
 
-## Workflow
-
-### Step 1: Create Dashboard
+### Step 2: Create the Dashboard
 
 ```bash
 coval dashboards create --name "Dashboard Name"
@@ -27,7 +26,7 @@ coval dashboards create --name "Dashboard Name"
 
 Capture the dashboard ID from the output.
 
-### Step 2: Identify Metrics
+### Step 3: Identify Metrics
 
 List available metrics to populate the dashboard:
 
@@ -43,9 +42,9 @@ coval runs list --page-size 10
 coval runs get <run_id> --format json
 ```
 
-### Step 3: Add Widgets
+### Step 4: Add Widgets
 
-For each metric, create a widget. Choose the visualization type based on the metric:
+For each metric, create a widget. Choose the visualization type based on the metric output:
 
 | Metric Output | Recommended Visualization |
 |---------------|--------------------------|
@@ -53,63 +52,30 @@ For each metric, create a widget. Choose the visualization type based on the met
 | String (Yes/No) | `pie`, `bar` |
 | String (categories) | `pie`, `bar`, `top-list` |
 
+Before choosing widget sizes, consult `references/grid-layout.md` for the 48-column grid constraints and widget-type minimums.
+
 ```bash
 coval dashboards widgets create <dashboard_id> \
   --name "Widget Name" \
   --type chart \
+  --width <columns> --height <rows> \
   --config '{"metricId": "<metric_id>", "visualizationType": "line", "monitoring": "Simulations", "aggregation": "avg", "metricOutputType": "float"}'
 ```
 
-### Step 4: Verify Layout
+### Step 5: Verify Layout
 
-After adding all widgets, list them and check the returned grid positions for gaps:
+After adding all widgets, list them and check the **returned** grid positions for gaps:
 
 ```bash
 coval dashboards widgets list <dashboard_id> --format json
 ```
 
-Verify:
+CRITICAL: Verify from the returned values:
 - Each row's widgets sum to 48 columns wide
 - No vertical gaps between rows
-- Widget sizes respect type minimums (see Grid Layout below)
+- Widget sizes respect type minimums per `references/grid-layout.md`
 
-Fix any gaps by updating widget dimensions.
-
-## Grid Layout
-
-The dashboard uses a **48-column** grid. Widget sizes must respect these constraints:
-
-| Widget Type | Min Width | Min Height | Default Width | Default Height | Notes |
-|-------------|-----------|------------|---------------|----------------|-------|
-| `chart` | 12 | 8 | 12 | 8 | — |
-| `chart` (statistic) | 10 | 12 | 12 | 12 | Max width: 24 |
-| `table` | 4 | 8 | 48 (full width) | 8 | — |
-| `text` | 12 | 2 | 16 | 2 | Fixed height of 2 |
-
-**Important:** Always check the **returned** grid values from the API/CLI — the server may adjust your requested dimensions to enforce minimums.
-
-## Widget Config Reference
-
-### Chart Config
-
-Required fields: `metricId`, `visualizationType`, `monitoring`, `aggregation`, `metricOutputType`
-
-| Field | Values |
-|-------|--------|
-| `visualizationType` | `line`, `bar`, `area`, `statistic`, `pie`, `histogram`, `top-list` |
-| `monitoring` | `Monitoring` (live conversations) or `Simulations` (test runs) |
-| `aggregation` | `sum`, `count`, `avg`, `max`, `min`, `success` |
-| `metricOutputType` | `string` or `float` |
-
-Optional: `bucketInterval`, `groupBy`, `precision`, `units`, `showAsPercentage`, `filters`
-
-### Table Config
-
-Required fields: `metricIds`, `monitoring`, `aggregation`
-
-### Text Config
-
-Required fields: `text` (markdown content, max 10,000 chars)
+Fix any gaps by updating widget dimensions with `coval dashboards widgets update`.
 
 ## Example
 
@@ -117,20 +83,27 @@ Required fields: `text` (markdown content, max 10,000 chars)
 # Create dashboard
 coval dashboards create --name "Q1 Agent Performance"
 
-# Add a latency statistic
+# Add a latency statistic (16 cols wide, 12 rows tall)
 coval dashboards widgets create <dashboard_id> \
   --name "Avg Latency" \
   --type chart \
   --width 16 --height 12 \
   --config '{"metricId": "29BlkepvvX19ebbLDB0y6Q", "visualizationType": "statistic", "monitoring": "Simulations", "aggregation": "avg", "metricOutputType": "float", "precision": 2, "units": "s"}'
 
-# Add a turn count line chart
-coval dashboards widgets create <dashboard_id> \
-  --name "Turn Count Over Time" \
-  --type chart \
-  --width 24 --height 8 \
-  --config '{"metricId": "7VHk6dTjvBcuV6XYPmaeGq", "visualizationType": "line", "monitoring": "Simulations", "aggregation": "avg", "metricOutputType": "float"}'
-
 # Verify layout
 coval dashboards widgets list <dashboard_id> --format json
 ```
+
+## Troubleshooting
+
+### Widget created but not visible
+Cause: Grid position (`grid_x`, `grid_y`) may be null after creation.
+Solution: Update the widget with explicit grid positions using `coval dashboards widgets update`.
+
+### Widget dimensions changed from what was requested
+Cause: The server enforces minimum sizes per widget type.
+Solution: Check `references/grid-layout.md` for constraints and use valid dimensions.
+
+### "Invalid request body" error on widget create
+Cause: Config JSON is malformed or missing required fields.
+Solution: Chart widgets require all of: `metricId`, `visualizationType`, `monitoring`, `aggregation`, `metricOutputType`.

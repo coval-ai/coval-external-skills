@@ -1,6 +1,6 @@
 ---
 name: manage-widgets
-description: List, get, update, or delete widgets in a Coval dashboard. Use when user wants to view, modify, or remove dashboard widgets.
+description: List, get, update, or delete widgets in a Coval dashboard. Use when user says "list widgets", "show widgets", "update widget", "resize widget", "delete widget", "move widget", or "edit widget config".
 argument-hint: "[dashboard-id]"
 ---
 
@@ -8,9 +8,10 @@ argument-hint: "[dashboard-id]"
 
 Manage widgets in dashboard `$ARGUMENTS`.
 
-## Prerequisites
+## Instructions
 
-Ensure the Coval CLI is installed and authenticated:
+### Step 1: Verify CLI Authentication
+
 ```bash
 coval whoami
 ```
@@ -20,8 +21,6 @@ If no dashboard ID provided, list available dashboards:
 ```bash
 coval dashboards list
 ```
-
-## Operations
 
 ### List Widgets
 
@@ -41,12 +40,6 @@ coval dashboards widgets list <dashboard_id> --format json
 coval dashboards widgets get <dashboard_id> <widget_id>
 ```
 
-For JSON output:
-
-```bash
-coval dashboards widgets get <dashboard_id> <widget_id> --format json
-```
-
 ### Update Widget
 
 Update name, type, size, or config:
@@ -63,7 +56,7 @@ coval dashboards widgets update <dashboard_id> <widget_id> \
   --config '{"metricId": "...", "visualizationType": "bar", "monitoring": "Simulations", "aggregation": "avg", "metricOutputType": "float"}'
 ```
 
-**Important:** After updating, check the **returned** values — the server may adjust dimensions to enforce widget-type minimums.
+CRITICAL: After updating, check the **returned** values — the server may adjust dimensions to enforce widget-type minimums per `references/grid-layout.md`.
 
 ### Delete Widget
 
@@ -84,16 +77,7 @@ coval dashboards widgets list <dashboard_id> --format json
 Check that:
 - Each row's widgets sum to 48 columns
 - No vertical gaps between rows
-- Sizes respect type minimums
-
-## Grid Constraints
-
-| Widget Type | Min Width | Min Height | Max Height | Notes |
-|-------------|-----------|------------|------------|-------|
-| `chart` | 12 | 8 | 30 | — |
-| `chart` (statistic) | 10 | 12 | 30 | Max width: 24 |
-| `table` | 4 | 8 | 30 | Defaults to full width (48) |
-| `text` | 12 | 2 | 2 | Fixed height |
+- Sizes respect type minimums per `references/grid-layout.md`
 
 ## Options
 
@@ -106,3 +90,13 @@ Check that:
 | `--height` | Grid height in rows | — |
 | `--page-size` | Results per page (list only) | 50 |
 | `--format` | Output format | `table` |
+
+## Troubleshooting
+
+### Widget not found
+Cause: Invalid widget ID or wrong dashboard ID.
+Solution: Run `coval dashboards widgets list <dashboard_id>` to find the correct widget ID.
+
+### Update didn't change dimensions
+Cause: Requested dimensions were below the type's minimum.
+Solution: Consult `references/grid-layout.md` for valid minimums.

@@ -1,6 +1,6 @@
 ---
 name: manage-dashboard
-description: Get, update, or delete a Coval dashboard. Use when user wants to view, rename, or remove a dashboard.
+description: Get, update, or delete a Coval dashboard. Use when user says "get dashboard", "rename dashboard", "delete dashboard", "update dashboard", or "show dashboard details".
 argument-hint: "[dashboard-id]"
 ---
 
@@ -8,9 +8,10 @@ argument-hint: "[dashboard-id]"
 
 Manage dashboard `$ARGUMENTS`.
 
-## Prerequisites
+## Instructions
 
-Ensure the Coval CLI is installed and authenticated:
+### Step 1: Verify CLI Authentication
+
 ```bash
 coval whoami
 ```
@@ -20,8 +21,6 @@ If no dashboard ID provided, list available dashboards:
 ```bash
 coval dashboards list
 ```
-
-## Operations
 
 ### Get Dashboard Details
 
@@ -53,7 +52,7 @@ coval dashboards update <dashboard_id> --name "New Dashboard Name"
 coval dashboards delete <dashboard_id>
 ```
 
-**Warning:** This deletes the dashboard and all its widgets. Confirm with the user before proceeding.
+CRITICAL: This deletes the dashboard and all its widgets. Confirm with the user before proceeding.
 
 ## Options
 
@@ -61,3 +60,9 @@ coval dashboards delete <dashboard_id>
 |------|-------------|---------|
 | `--name` | New dashboard name (update only) | — |
 | `--format` | Output format | `table` |
+
+## Troubleshooting
+
+### Dashboard not found
+Cause: Invalid dashboard ID.
+Solution: Run `coval dashboards list` to find the correct ID.
