@@ -10,6 +10,7 @@ This repository contains reusable skills for interacting with Coval's evaluation
 
 | Category | Description |
 |----------|-------------|
+| [Onboarding](./skills/onboarding/) | Interactive guided setup for first evaluation (personas, test cases, metrics, launch) |
 | [Runs](./skills/runs/) | Launch and monitor evaluation runs |
 | [Simulations](./skills/simulations/) | Analyze results and download audio |
 | [Agents](./skills/agents/) | Create, configure, and manage AI agents |
