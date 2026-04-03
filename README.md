@@ -22,6 +22,22 @@ This repository contains reusable skills for interacting with Coval's evaluation
 ## Quick Start
 
 ```bash
+# Install all Coval skills (works with Claude Code, Cursor, Windsurf, Codex, and 41+ agents)
+npx skills add coval-ai/coval-external-skills
+
+# Install the Coval CLI
+brew install coval-ai/tap/coval
+
+# Authenticate
+coval login
+
+# Run the onboarding skill to set up your first evaluation
+/onboard
+```
+
+### Manual Installation
+
+```bash
 # Clone the repository
 git clone https://github.com/coval-ai/coval-external-skills.git
 
