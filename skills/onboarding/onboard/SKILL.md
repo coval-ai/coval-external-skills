@@ -2,11 +2,17 @@
 name: onboard
 description: >
   Interactively set up a first Coval AI evaluation. Guides users through
-  connecting an agent, creating personas, building test cases, selecting
-  metrics, and launching their first eval run. Use when user says "onboard",
-  "get started", "set up evaluation", "first eval", "new to coval", or
-  wants help creating their first test run.
+  installing the CLI, connecting an agent, creating personas, building test
+  cases, selecting metrics, and launching their first eval run. Use when user
+  says "onboard", "get started", "set up evaluation", "first eval", "new to
+  coval", or wants help creating their first test run.
 argument-hint: "[use-case]"
+compatibility: Requires the Coval CLI (coval). The skill will guide installation if missing.
+metadata:
+  author: coval-ai
+  version: "1.0.0"
+  homepage: https://coval.dev
+  source: https://github.com/coval-ai/coval-external-skills
 ---
 
 # Coval Onboarding
@@ -15,15 +21,50 @@ Guide the user through setting up a complete AI evaluation from scratch using th
 
 If `$ARGUMENTS` contains a use case (e.g. "insurance_claims", "customer_support"), skip the use case question in Phase 2.
 
-## Phase 0: Preflight
+## Phase 0: Setup + Preflight
 
-Verify auth and detect existing resources.
+### Step 1: Check CLI installation
+
+```bash
+coval --version
+```
+
+If the command fails or is not found, guide the user to install it based on their OS:
+
+**macOS (Homebrew — recommended):**
+```bash
+brew install coval-ai/tap/coval
+```
+
+**Linux / macOS (Cargo — requires Rust 1.75+):**
+```bash
+cargo install coval
+```
+
+**Windows (PowerShell — binary download):**
+```powershell
+# Download the latest Windows binary from GitHub releases
+Invoke-WebRequest -Uri "https://github.com/coval-ai/cli/releases/latest/download/coval-x86_64-pc-windows-msvc.exe" -OutFile "coval.exe"
+```
+
+**All platforms (manual binary download):**
+Download the latest release for your OS/architecture from https://github.com/coval-ai/cli/releases
+
+After installation, verify: `coval --version`
+
+### Step 2: Check authentication
 
 ```bash
 coval whoami
 ```
 
-If not authenticated, tell the user to run `coval login` and stop.
+If not authenticated, guide the user:
+```bash
+coval login
+```
+This prompts for an API key. Get one at https://app.coval.dev/settings (Organization > Manage > API Keys).
+
+If the user doesn't have a Coval account, direct them to https://coval.dev to sign up.
 
 Then run these in parallel to inventory existing resources:
 
