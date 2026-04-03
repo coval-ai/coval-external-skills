@@ -26,23 +26,29 @@ If `$ARGUMENTS` contains a use case (e.g. "insurance_claims", "customer_support"
 ### Step 1: Check CLI installation
 
 ```bash
-which coval
+coval --version
 ```
 
-If the CLI is not installed, guide the user to install it:
+If the command fails or is not found, guide the user to install it based on their OS:
 
-**macOS (Homebrew):**
+**macOS (Homebrew — recommended):**
 ```bash
 brew install coval-ai/tap/coval
 ```
 
-**macOS/Linux (Cargo — requires Rust):**
+**Linux / macOS (Cargo — requires Rust 1.75+):**
 ```bash
 cargo install coval
 ```
 
-**All platforms (binary download):**
-Download the latest release for your OS from https://github.com/coval-ai/cli/releases
+**Windows (PowerShell — binary download):**
+```powershell
+# Download the latest Windows binary from GitHub releases
+Invoke-WebRequest -Uri "https://github.com/coval-ai/cli/releases/latest/download/coval-x86_64-pc-windows-msvc.exe" -OutFile "coval.exe"
+```
+
+**All platforms (manual binary download):**
+Download the latest release for your OS/architecture from https://github.com/coval-ai/cli/releases
 
 After installation, verify: `coval --version`
 
