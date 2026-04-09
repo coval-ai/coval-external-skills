@@ -39,6 +39,77 @@ coval metrics create \
   --format json
 ```
 
+### categorical
+
+LLM classifies the conversation into one of several predefined categories.
+
+- **Output**: STRING (one of the defined categories)
+- **Config**: `prompt` — the evaluation question, `categories` — comma-separated list of valid categories (min 2, max 50)
+- **Use for**: Multi-outcome classification (sentiment categories, escalation reasons, call outcomes, issue types)
+
+```bash
+coval metrics create \
+  --name "Call Outcome" \
+  --description "Classify the overall outcome of the call" \
+  --type categorical \
+  --prompt "Given the transcript, classify the call outcome into one of the following categories. Return ONLY the category name." \
+  --categories "Resolved,Escalated,Abandoned,Follow-Up Required,Wrong Department" \
+  --format json
+```
+
+### numerical
+
+LLM assigns a numeric score to the conversation within a defined range.
+
+- **Output**: FLOAT (within min-max range)
+- **Config**: `prompt` — the evaluation question, `min-value` — minimum score, `max-value` — maximum score
+- **Use for**: Graded assessments (1-10 quality scores, 0-100 confidence ratings)
+
+```bash
+coval metrics create \
+  --name "Customer Satisfaction Score" \
+  --description "Rate customer satisfaction on a 1-10 scale" \
+  --type numerical \
+  --prompt "Given the transcript, rate the likely customer satisfaction on a scale of 1 to 10, where 1 is extremely dissatisfied and 10 is extremely satisfied. Return ONLY the number." \
+  --min-value 1 --max-value 10 \
+  --format json
+```
+
+### audio-categorical
+
+LLM classifies audio quality into predefined categories. **Voice agents only.**
+
+- **Output**: STRING (one of the defined categories)
+- **Config**: `prompt`, `categories`
+- **Use for**: Audio quality grading, accent detection, noise classification
+
+### audio-numerical
+
+LLM assigns a numeric score to audio quality. **Voice agents only.**
+
+- **Output**: FLOAT (within min-max range)
+- **Config**: `prompt`, `min-value`, `max-value`
+- **Use for**: Audio quality scoring, clarity ratings
+
+### regex
+
+Pattern matching on the conversation transcript.
+
+- **Output**: BOOLEAN (match found or not)
+- **Config**: `regex-pattern`, optional `role` (agent/user), `case-insensitive`, `match-mode`, `position`
+- **Use for**: Checking for specific phrases, compliance language, prohibited words
+
+```bash
+coval metrics create \
+  --name "Disclaimer Mentioned" \
+  --description "Check if the agent read the required disclaimer" \
+  --type regex \
+  --regex-pattern "terms and conditions|disclaimer|legal notice" \
+  --role agent \
+  --case-insensitive true \
+  --format json
+```
+
 ### pause
 
 Detects silence gaps in audio. **Voice agents only.**
@@ -96,9 +167,14 @@ Determines whether the agent resolved the caller's issue.
 
 | I want to evaluate... | Use this type |
 |----------------------|---------------|
-| Any custom criterion from transcript | `llm-binary` |
-| Voice/audio quality | `audio-binary` |
+| Yes/no criterion from transcript | `llm-binary` |
+| Classify into multiple categories | `categorical` |
+| Assign a numeric score | `numerical` |
+| Voice/audio quality (yes/no) | `audio-binary` |
+| Voice/audio quality (categories) | `audio-categorical` |
+| Voice/audio quality (score) | `audio-numerical` |
 | Long silences in calls | `pause` |
+| Check for specific phrases | `regex` |
 | Test case expected behaviors | `composite` (built-in) |
 | Response speed | `latency` (built-in) |
 | Caller emotion | `sentiment` (built-in) |
