@@ -22,7 +22,7 @@ Guidelines for composing dashboards. All layouts use the **48-column** grid syst
 |-------------|-------------|--------|------|-------|
 | **Float** (latency, duration, count) | `line` | `aggregation: "avg", metricOutputType: "float"` | 24×8 or 12×8 | **Default for all floats.** |
 | **Binary YES/NO** (resolution, tone) | `bar` | `aggregation: "count", stacked: true, showAsPercentage: true, metricOutputType: "string"` | 24×8 or 12×8 | **100% stacked bar showing YES/NO ratio over time.** |
-| **Categorical** (call outcome) — sparse | `pie` | `aggregation: "count", metricOutputType: "string"` | 16×12 | **Default for categorical.** Proportions. |
+| **Categorical** (call outcome) — sparse | `pie` | `aggregation: "count", metricOutputType: "string"` | 24×16 | **Default for categorical.** Place in 2×2+pie layout (see below). |
 | **Categorical** (call outcome) — dense | `bar` | `aggregation: "count", metricOutputType: "string"` | 24×8 | Categories over time. When 2+ runs in 4h. |
 | **Float, sparse data** | `statistic` | `aggregation: "avg", metricOutputType: "float"` | 16×12 | Only when < 2 runs close together. |
 | **Float, variance focus** | `histogram` | `aggregation: "avg", metricOutputType: "float"` | 16×12 | Only if user asks about distribution. |
@@ -38,6 +38,23 @@ Check run timestamps before choosing viz types:
 |-------------|-----|-------|
 | 2+ runs within 4 hours of each other, or 5+ runs in 7 days | Line charts, bar charts (time series) | Statistics |
 | Sparse isolated runs (< 2 in same 4h bucket) | Statistics | Line/bar charts (will look broken with 1 data point) |
+
+## Pie Chart Layout Pattern
+
+Pie charts need more height for their legend. Use a 2×2 grid of smaller charts alongside:
+
+```
+┌──────────────┬──────────────┬────────────────────────┐
+│  Chart 12×8  │  Chart 12×8  │                        │
+├──────────────┼──────────────┤   Pie Chart 24×16      │
+│  Chart 12×8  │  Chart 12×8  │                        │
+└──────────────┴──────────────┴────────────────────────┘
+```
+
+- Left 2×2: 4 line/bar charts at 12w×8h each (grid-x: 0,12 / grid-y: N, N+8)
+- Right pie: 24w×16h (grid-x: 24, grid-y: N)
+- Total: 24+24=48 width, 16h tall
+- Fill the 2×2 with the most related float or binary metrics
 
 ## Row Width Options
 

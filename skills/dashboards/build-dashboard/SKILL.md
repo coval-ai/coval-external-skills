@@ -171,7 +171,7 @@ A good dashboard has **at most 8-10 widgets** unless the user specifically reque
 **This is where you use judgment — not a template.** The layout should be unique to the user's data, metrics, and purpose. Do not produce the same dashboard every time.
 
 **Hard rules (non-negotiable):**
-- Text widget section headers separate **thematic groups**, not every row. Use them when the metrics below belong to a different category than the ones above (e.g., switching from "Response Performance" to "Compliance"). Do NOT add a text widget before every single row — that's noise, not structure. A dashboard with 4 sections needs 2-3 text headers, not 5-6.
+- Text widget section headers are **optional and should be used sparingly**. Only add one when there's a genuine thematic shift (e.g., switching from performance metrics to compliance metrics). Most dashboards need **0-2 text headers at most**. If the dashboard is small (8-10 widgets) or the metrics are all related, you may not need any text headers at all. A wall of text separators is worse than no separators.
 - Latency must always appear somewhere.
 - All rows must sum to 48 columns.
 - **Improving a dashboard = rebuild from scratch**, not append to the bottom.
@@ -192,6 +192,25 @@ The default visualization for most metrics should be a **time series chart** (li
 **Pie charts are ONLY for categorical metrics** (3+ string categories like "Resolved/Escalated/Abandoned"). Binary YES/NO metrics NEVER get pie charts — they get 100% stacked bar charts.
 
 **Use fourths (12-col) when you have 4+ metrics in a section.** Don't force everything into halves and thirds — if you have 4 similar float metrics, put them in a row of 4 line charts at 12 cols each.
+
+**Pie chart layout:** Pie charts need more height for their legend. When a pie chart is on the dashboard, use this layout pattern — a 2×2 grid of smaller charts on the left with the pie chart spanning the full height on the right:
+
+```
+┌──────────────┬──────────────┬────────────────────────┐
+│  Chart 12×8  │  Chart 12×8  │                        │
+├──────────────┼──────────────┤   Pie Chart 24×16      │
+│  Chart 12×8  │  Chart 12×8  │                        │
+└──────────────┴──────────────┴────────────────────────┘
+```
+
+Grid positions for this pattern (assuming starting at y=N):
+- Top-left chart: grid-x=0, grid-y=N, grid-w=12, grid-h=8
+- Top-right chart: grid-x=12, grid-y=N, grid-w=12, grid-h=8
+- Bottom-left chart: grid-x=0, grid-y=N+8, grid-w=12, grid-h=8
+- Bottom-right chart: grid-x=12, grid-y=N+8, grid-w=12, grid-h=8
+- Pie chart: grid-x=24, grid-y=N, grid-w=24, grid-h=16
+
+This uses the 2×2 charts to fill the left 24 cols (2 rows of 8h = 16h total) while the pie chart spans the right 24 cols at 16h. Total: 24+24=48 width, 16h tall.
 
 **Compose sections based on what metrics you have:**
 
