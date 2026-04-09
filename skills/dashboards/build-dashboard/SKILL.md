@@ -44,6 +44,8 @@ If they choose **improve existing**:
 - Analyze what's already there: which metrics are visualized, what viz types are used, what's missing
 - **Improving means REBUILDING the dashboard** — delete ALL existing widgets and recreate from scratch with the full metric set and correct viz types. Do NOT just append more widgets to the bottom. The dashboard should look cohesive, not like layers of additions.
 - To delete existing widgets: `coval dashboards widgets delete <dashboard_id> <widget_id>`
+- Check if any metrics have **no data yet** (newly created metrics that haven't been run). If so, tell the user: "Some metrics have no data yet (e.g., <metric name>). The dashboard will show empty charts for those. Want to run `/quick-eval` first to generate data for them?"
+- If yes, invoke `/quick-eval` with the new metrics included, wait for completion, then proceed.
 - Then proceed to Phase 1 to plan the new layout from scratch, incorporating all metrics (old + new)
 
 If they choose **create new** or there are no existing dashboards:
@@ -166,7 +168,7 @@ A good dashboard has **at most 8-10 widgets** unless the user specifically reque
 **This is where you use judgment — not a template.** The layout should be unique to the user's data, metrics, and purpose. Do not produce the same dashboard every time.
 
 **Hard rules (non-negotiable):**
-- Text widget section headers are **REQUIRED** to separate visual sections.
+- Text widget section headers separate **thematic groups**, not every row. Use them when the metrics below belong to a different category than the ones above (e.g., switching from "Response Performance" to "Compliance"). Do NOT add a text widget before every single row — that's noise, not structure. A dashboard with 4 sections needs 2-3 text headers, not 5-6.
 - Latency must always appear somewhere.
 - All rows must sum to 48 columns.
 - **Improving a dashboard = rebuild from scratch**, not append to the bottom.
@@ -180,10 +182,11 @@ The default visualization for most metrics should be a **time series chart** (li
 | **Float** (latency, duration, count, score) | `line` chart | **Default for all float metrics.** Shows trend over time. |
 | **Float** (latency only, if variance matters) | `histogram` | Only if user explicitly cares about distribution consistency. |
 | **Binary YES/NO** (resolution, tone, verification) | `bar` with `aggregation: "count"`, `stacked: true`, `showAsPercentage: true` | **100% stacked bar chart.** Shows YES/NO ratio over time. NOT a pie chart. |
-| **Categorical string** (end reason, sentiment categories) | `bar` with `aggregation: "count"` | Shows category distribution. Only use `pie` if the user explicitly asks. |
-| **Any metric, sparse data** (< 2 runs close together) | `statistic` | Fallback when there's not enough data for time series. |
+| **Categorical string** (end reason, call outcome) — sparse data | `pie` with `aggregation: "count"` | **Default for categorical.** Shows proportion of each category. |
+| **Categorical string** — dense data (2+ runs in same 4h bucket) | `bar` with `aggregation: "count"` | Shows how categories change over time. Switch from pie when enough data. |
+| **Any metric, sparse data** (< 2 runs in same 4h bucket) | `statistic` | Fallback when there's not enough data for time series. |
 
-**NEVER use pie charts** unless the metric is truly categorical (like "end reason" with 5+ categories) AND the user explicitly asks. Binary YES/NO metrics get stacked bar charts, not pie charts.
+**Pie charts are ONLY for categorical metrics** (3+ string categories like "Resolved/Escalated/Abandoned"). Binary YES/NO metrics NEVER get pie charts — they get 100% stacked bar charts.
 
 **Use fourths (12-col) when you have 4+ metrics in a section.** Don't force everything into halves and thirds — if you have 4 similar float metrics, put them in a row of 4 line charts at 12 cols each.
 

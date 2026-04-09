@@ -22,16 +22,13 @@ Guidelines for composing dashboards. All layouts use the **48-column** grid syst
 |-------------|-------------|--------|------|-------|
 | **Float** (latency, duration, count) | `line` | `aggregation: "avg", metricOutputType: "float"` | 24×8 or 12×8 | **Default for all floats.** |
 | **Binary YES/NO** (resolution, tone) | `bar` | `aggregation: "count", stacked: true, showAsPercentage: true, metricOutputType: "string"` | 24×8 or 12×8 | **100% stacked bar showing YES/NO ratio over time.** |
-| **Categorical string** (end reason) | `bar` | `aggregation: "count", metricOutputType: "string"` | 24×8 | Category distribution. |
+| **Categorical** (call outcome) — sparse | `pie` | `aggregation: "count", metricOutputType: "string"` | 16×12 | **Default for categorical.** Proportions. |
+| **Categorical** (call outcome) — dense | `bar` | `aggregation: "count", metricOutputType: "string"` | 24×8 | Categories over time. When 2+ runs in 4h. |
 | **Float, sparse data** | `statistic` | `aggregation: "avg", metricOutputType: "float"` | 16×12 | Only when < 2 runs close together. |
 | **Float, variance focus** | `histogram` | `aggregation: "avg", metricOutputType: "float"` | 16×12 | Only if user asks about distribution. |
 | **Multiple metrics** | `table` | `aggregation: "success", groupBy: "agent"` | 48×8 | Always last widget. |
 
-**NEVER use pie charts** unless:
-- The metric is truly categorical (5+ distinct string values)
-- AND the user explicitly asks for pie
-
-Binary YES/NO metrics get **stacked bar charts**, not pie charts.
+**Pie charts are ONLY for categorical metrics** (3+ string categories like "Resolved/Escalated/Abandoned"). Use pie when data is sparse, switch to bar when dense (2+ runs in same 4h bucket). Binary YES/NO metrics NEVER get pie charts — they get 100% stacked bar charts.
 
 ## Data Density Rules
 
