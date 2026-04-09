@@ -222,3 +222,4 @@ Suggest next steps:
 - Build test cases: "Use `/build-test-suite` to create test scenarios"
 - Design persona: "Use `/design-persona` to create a simulated caller"
 - Launch evaluation: "Use `/quick-eval` to run your first evaluation"
+- **If new metrics were created**: "Use `/build-dashboard` to add your new metrics to a dashboard so you can track them visually"
