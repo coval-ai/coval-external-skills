@@ -6,7 +6,7 @@ Skills for configuring evaluation metrics.
 
 | Skill | Description |
 |-------|-------------|
-| *Coming soon* | |
+| [configure-metrics](./configure-metrics/) | Interactive guide to select and create evaluation metrics with use-case recommendations |
 
 ## Overview
 

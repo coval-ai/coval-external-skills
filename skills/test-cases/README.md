@@ -6,6 +6,7 @@ Skills for building and managing Coval evaluation test cases.
 
 | Skill | Description |
 |-------|-------------|
+| [build-test-suite](./build-test-suite/) | Interactive guide to build a test suite with scenarios and expected behaviors |
 | [huggingface-import](./huggingface-import/) | Import datasets from HuggingFace and convert to Coval test sets |
 
 ## Overview

@@ -6,7 +6,7 @@ Skills for defining simulation personas.
 
 | Skill | Description |
 |-------|-------------|
-| *Coming soon* | |
+| [design-persona](./design-persona/) | Interactive guide to design a simulation persona with voice, behavior, and environment settings |
 
 ## Overview
 
