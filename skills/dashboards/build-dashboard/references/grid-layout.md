@@ -21,7 +21,7 @@ The dashboard uses a **48-column** grid system.
 | `chart` | 12 | 8 | 30 | 12 | 8 | — |
 | `chart` (statistic viz) | 10 | 12 | 30 | 12 | 12 | Max width: 24 |
 | `table` | 4 | 8 | 30 | 48 (full width) | 8 | Tables default to full width |
-| `text` | 12 | 2 | 2 | 16 | 2 | Fixed height of 2 rows |
+| `text` | 12 | 2 | 2 | 16 | 2 | Fixed height of 2 rows. **Markdown does not render** — plain text only |
 
 ## Layout Rules
 

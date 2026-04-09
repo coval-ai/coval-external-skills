@@ -6,7 +6,7 @@ Skills for creating and managing Coval agents.
 
 | Skill | Description |
 |-------|-------------|
-| *Coming soon* | |
+| [setup-agent](./setup-agent/) | Interactive guide to connect and configure a new agent for evaluation |
 
 ## Overview
 
