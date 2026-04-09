@@ -1,10 +1,10 @@
 ---
 name: build-dashboard
-description: Build or improve a Coval dashboard with metric visualizations backed by real data. Creates new dashboards from scratch or enhances existing ones by analyzing usage patterns, metric frequency, and gaps. Use when user says "create a dashboard", "build a dashboard", "improve my dashboard", "add widgets", "visualize my metrics", "make a performance dashboard", or "dashboard for my runs".
+description: Build or improve a Coval dashboard with metric visualizations backed by real data. Creates new dashboards from scratch or rebuilds existing ones by analyzing usage patterns, metric frequency, and data density. Use when user says "create a dashboard", "build a dashboard", "improve my dashboard", "add widgets", "visualize my metrics", "make a performance dashboard", or "dashboard for my runs".
 argument-hint: "[dashboard-purpose-or-name]"
 ---
 
-# Setup Coval Dashboard
+# Build Coval Dashboard
 
 Build a data-driven dashboard for `$ARGUMENTS`. This skill analyzes the user's existing runs and metrics to create a dashboard populated with real data — never an empty shell.
 
@@ -35,7 +35,19 @@ coval agents list --format json
 coval runs list --format json --page-size 50
 ```
 
-If dashboards exist, ask: "You have existing dashboards. Modify one or create new?"
+**Always ask first:** "Would you like to **create a new dashboard** or **improve an existing one**?"
+
+If they choose **improve existing**:
+- List existing dashboards as a numbered list with names and widget counts
+- Ask which dashboard to improve
+- Fetch that dashboard's widgets: `coval dashboards widgets list <dashboard_id> --format json`
+- Analyze what's already there: which metrics are visualized, what viz types are used, what's missing
+- **Improving means REBUILDING the dashboard** — delete ALL existing widgets and recreate from scratch with the full metric set and correct viz types. Do NOT just append more widgets to the bottom. The dashboard should look cohesive, not like layers of additions.
+- To delete existing widgets: `coval dashboards widgets delete <dashboard_id> <widget_id>`
+- Then proceed to Phase 1 to plan the new layout from scratch, incorporating all metrics (old + new)
+
+If they choose **create new** or there are no existing dashboards:
+- Proceed to Phase 0 Step 3 as normal
 
 ### Step 3: Analyze usage patterns
 
@@ -70,7 +82,7 @@ If dashboards exist, ask: "You have existing dashboards. Modify one or create ne
    - **At least 5 metrics** including **Latency** (always required — find its ID from the builtin metrics list)
    - **Confirm agent and test set with the user** before launching (unless there's only 1 agent — then auto-select)
 
-   **STOP this skill. Invoke `/quick-eval`** with the above parameters. Wait for the evaluation to complete and produce metric data. Only then resume `/setup-dashboard`.
+   **STOP this skill. Invoke `/quick-eval`** with the above parameters. Wait for the evaluation to complete and produce metric data. Only then resume `/build-dashboard`.
 
    - If there are **no runs at all**: Also ask whether they want a Simulations or Monitoring dashboard before invoking `/quick-eval`.
    - If the user explicitly says they don't want to run evals: **Do NOT create the dashboard.** Tell them to come back when they have data. An empty dashboard is a waste — never create one.
@@ -79,7 +91,17 @@ If dashboards exist, ask: "You have existing dashboards. Modify one or create ne
 
    **Human review**: Only if the user explicitly mentions it. Do not suggest.
 
-### Step 4: Identify top metrics by frequency
+### Step 4: Analyze data density
+
+**This determines whether to use time series charts or statistics.**
+
+Check how many runs exist within the last 7 days and their timestamps. The default time bucket is **4 hours**, so data points within the same 4-hour window get aggregated together:
+- If **2+ runs within 4 hours of each other** (or 5+ runs total in the last 7 days): **use time series charts** (line, bar) — there's enough data to show meaningful trends
+- If **fewer than 2 runs in the same 4-hour bucket** (sparse, isolated runs): **use statistics** — there's not enough data for meaningful time series, just show the numbers
+
+This is the single most important layout decision. Time series charts with 1 data point look broken. Statistics with 50 data points waste the data.
+
+### Step 5: Identify top metrics by frequency
 
 **Only consider runs from the last 7 days.** If no recent runs exist and `/quick-eval` was just run, use that run's data.
 
@@ -103,13 +125,15 @@ If a metric has never produced data (all `status: "FAILED"` or `value: null`), d
 ```
 Metric frequency (last 7 days):
 
-  Metric                  | Appearances | Status
-  ────────────────────────|─────────────|────────
-  Latency                 | 10/10       | ✓ data
-  Turn Count              | 10/10       | ✓ data
-  Words Per Message       | 8/10        | ✓ data
-  Agent Repeats Itself    | 5/10        | ✓ data
-  Background Noise        | 0/10        | ✗ no data (omitting)
+  Metric                  | Appearances | Type    | Status
+  ────────────────────────|─────────────|─────────|────────
+  Latency                 | 10/10       | float   | ✓ data
+  Turn Count              | 10/10       | float   | ✓ data
+  Issue Resolution        | 8/10        | binary  | ✓ data
+  Professional Tone       | 8/10        | binary  | ✓ data
+  Background Noise        | 0/10        | float   | ✗ no data (omitting)
+
+Data density: 5 runs in last 7 days → using time series charts
 ```
 
 Ask: **"These are the metrics with data. Use all of them, or adjust?"**
@@ -128,105 +152,103 @@ If there are **multiple agents**, ask: **"Which agent should this dashboard focu
 
 ### Step 2: Determine layout
 
-Based on the data source and metric count, choose a layout. A good dashboard has **at most 8 widgets** unless the user specifically requests more or is adding a widget to an existing dashboard.
+A good dashboard has **at most 8-10 widgets** unless the user specifically requests more.
 
 **Layout principles:**
-- **Text widgets** separate sections by utility. They are fixed at 2 rows tall and only vary in width: full-width (48), half (24), or thirds (16). **Markdown does not render in text widgets — use plain text only.**
+- **Text widgets** separate sections by utility. Fixed at 2 rows tall. Width: full (48), half (24), or thirds (16). **Markdown does not render — plain text only.**
 - **Table widgets** should be full-width (48 cols).
-- **Chart widgets** (line, bar, area, pie, histogram) should be half-width (24 cols) or thirds (16 cols).
-- **Statistic widgets** should be thirds (16 cols) or halves (24 cols).
+- **Chart widgets** can be halves (24), thirds (16), or **fourths (12)** when you have many metrics.
+- **Statistic widgets** should be thirds (16) or halves (24). Only use when data is sparse (see Step 4).
+- **Row widths**: 2 widgets = 24+24. 3 widgets = 16+16+16. 4 widgets = 12+12+12+12. All sum to 48.
 
 ### Step 3: Build the widget list
 
 **This is where you use judgment — not a template.** The layout should be unique to the user's data, metrics, and purpose. Do not produce the same dashboard every time.
 
 **Hard rules (non-negotiable):**
-- Text widget section headers are **REQUIRED** to separate visual sections. Without them the dashboard is a wall of charts.
-- Latency must always appear somewhere (statistic, chart, or table).
-- Max 8 widgets unless user asks for more.
+- Text widget section headers are **REQUIRED** to separate visual sections.
+- Latency must always appear somewhere.
 - All rows must sum to 48 columns.
+- **Improving a dashboard = rebuild from scratch**, not append to the bottom.
 
-**Visualization selection — match the metric to the right chart type:**
+**Visualization selection — FAVOR TIME SERIES:**
 
-| Metric Output Type | Good Visualizations | When to Use |
-|---------------------|---------------------|-------------|
-| Float (latency, duration, count) | `statistic` | Single KPI number — use for the 2-3 most important metrics |
-| Float (latency, duration) | `line` | Trends over time — use when the user cares about trajectory |
-| Float (scores, counts) | `bar` | Comparing across runs or categories |
-| Float (latency, duration) | `histogram` | Distribution — use when variance matters (e.g., "is latency consistent or spiky?") |
-| String/Boolean (resolution, sentiment) | `pie` | Proportions — use for yes/no or categorical outcomes |
-| String/Boolean (resolution, sentiment) | `bar` | Comparing categories across runs |
-| String (end reason, sentiment) | `top-list` | Ranking — use for "what are the most common outcomes?" |
+The default visualization for most metrics should be a **time series chart** (line or bar), NOT a statistic or pie chart. Dashboards are most useful when they show how things change over time.
 
-**Think about what story the dashboard tells.** A performance overview is different from a quality audit is different from a trend analysis:
+| Metric Type | Default Visualization | When to Use |
+|-------------|----------------------|-------------|
+| **Float** (latency, duration, count, score) | `line` chart | **Default for all float metrics.** Shows trend over time. |
+| **Float** (latency only, if variance matters) | `histogram` | Only if user explicitly cares about distribution consistency. |
+| **Binary YES/NO** (resolution, tone, verification) | `bar` with `aggregation: "count"`, `stacked: true`, `showAsPercentage: true` | **100% stacked bar chart.** Shows YES/NO ratio over time. NOT a pie chart. |
+| **Categorical string** (end reason, sentiment categories) | `bar` with `aggregation: "count"` | Shows category distribution. Only use `pie` if the user explicitly asks. |
+| **Any metric, sparse data** (< 2 runs close together) | `statistic` | Fallback when there's not enough data for time series. |
 
-- **Performance overview**: Lead with Latency statistic + 2 other KPIs. Add a trend line for the primary metric. End with a summary table.
-- **Quality audit**: Lead with pass/fail pie charts for binary metrics. Add statistics for failure rates. Table showing per-test-case breakdown.
-- **Trend analysis**: All line/area charts. Show how metrics change over time. Statistics are less useful here.
-- **Live monitoring**: Real-time statistics at the top. Area chart for volume trends. Top-list for common issues.
+**NEVER use pie charts** unless the metric is truly categorical (like "end reason" with 5+ categories) AND the user explicitly asks. Binary YES/NO metrics get stacked bar charts, not pie charts.
+
+**Use fourths (12-col) when you have 4+ metrics in a section.** Don't force everything into halves and thirds — if you have 4 similar float metrics, put them in a row of 4 line charts at 12 cols each.
 
 **Compose sections based on what metrics you have:**
 
-For each group of related metrics, create a section:
-1. **Text header** describing the section (e.g., "Response Performance", "Conversation Quality", "Audio Metrics")
-2. **1-3 widgets** visualizing those metrics with appropriate chart types
-3. Repeat for the next group
-
-Group metrics by theme, not arbitrarily:
+Group metrics by theme:
 - Latency + Audio Duration + Time to First Byte → "Response Performance"
 - Turn Count + Words Per Message + Agent Repeats Itself → "Conversation Quality"
-- Sentiment + Call Resolution + Custom LLM Judge → "Outcome Analysis"
+- Issue Resolution + Caller Identity Verification + Professional Tone → "Compliance & Quality"
 - Agent Fails to Respond + End Reason → "Reliability"
 
-If you only have 2-3 metrics, don't force multiple sections — one section header + widgets + table is fine.
+For each section:
+1. **Text header** (full-width)
+2. **Charts** — line charts for floats, stacked bar charts for binary metrics. Use halves, thirds, or fourths depending on count.
+
+End with a **summary table** (full-width) containing all metrics.
 
 ### Step 4: Present and confirm
 
-**You MUST show the layout as an ASCII box-drawing mockup** — not a markdown table, not a bullet list, not a description. Build the mockup from your actual planned widgets. Example format:
+**You MUST show the layout as an ASCII box-drawing mockup.** Build it from your actual planned widgets:
 
 ```
 Dashboard: "<name>" (data: <Simulations|Monitoring>)
 
 ┌─────────────────────────────────────────────────┐
 │  Response Performance                    (text)  │  48col, 2h
-├───────────────┬───────────────┬─────────────────┤
-│  Statistic    │  Statistic    │  Histogram      │  16+16+16=48, 12h
-│  (Latency)    │  (Audio Dur.) │  (Latency dist) │
-├─────────────────────────────────────────────────┤
-│  Conversation Quality                    (text)  │  48col, 2h
 ├────────────────────────┬────────────────────────┤
-│  Line Chart            │  Pie Chart             │  24+24=48, 8h
-│  (Turn Count trend)    │  (Agent Repeats?)      │
+│  Line Chart            │  Line Chart            │  24+24=48, 8h
+│  (Latency)             │  (Audio Duration)      │
+├─────────────────────────────────────────────────┤
+│  Compliance & Quality                    (text)  │  48col, 2h
+├────────────────────────┬────────────────────────┤
+│  Stacked Bar           │  Stacked Bar           │  24+24=48, 8h
+│  (Issue Resolution)    │  (Identity Verified?)  │
 ├─────────────────────────────────────────────────┤
 │  Summary Table (all metrics)                     │  48col, 8h
 └─────────────────────────────────────────────────┘
-
-Widgets: 8 total
 ```
-
-The mockup above is an **example** — your layout should reflect the actual metrics and groupings you chose, not this exact structure.
 
 Ask: **"Does this layout look right? (yes / customize)"**
 
 If customize:
-- Allow swapping visualization types (e.g., line → histogram, statistic → pie)
-- Allow adding/removing widgets (warn if going above 8)
+- Allow swapping visualization types
+- Allow adding/removing widgets
 - Allow reordering sections or metrics
 - Allow changing section groupings
 
 ## Phase 2: Create Dashboard + Widgets
 
-### Step 1: Create the dashboard
+### Step 1: Create the dashboard (or clear existing)
 
+For **new dashboards**:
 ```bash
 coval dashboards create --name "<dashboard_name>" --format json
 ```
 
-Capture `dashboard_id` from the JSON response.
+For **improving existing dashboards**: Delete all existing widgets first, then recreate:
+```bash
+# Delete each existing widget
+coval dashboards widgets delete <dashboard_id> <widget_id>
+```
 
 ### Step 2: Create widgets row by row
 
-Create widgets top to bottom, left to right. Use explicit `--grid-x` and `--grid-y` positioning to ensure correct layout.
+Create widgets top to bottom, left to right. Use explicit `--grid-x` and `--grid-y` positioning.
 
 #### Text widgets (section headers)
 
@@ -239,9 +261,9 @@ coval dashboards widgets create <dashboard_id> \
   --config '{"text": "<section_title>"}'
 ```
 
-Text widgets are always 2 rows tall. Width options: 48 (full), 24 (half), 16 (third). **No markdown — plain text only.**
+**No markdown — plain text only.**
 
-#### Chart widgets (line, bar, area, statistic, pie, histogram, top-list)
+#### Chart widgets (line, bar, area, statistic, histogram)
 
 ```bash
 coval dashboards widgets create <dashboard_id> \
@@ -252,9 +274,11 @@ coval dashboards widgets create <dashboard_id> \
   --config '{"metricId": "<metric_id>", "visualizationType": "<viz_type>", "monitoring": "<Simulations|Monitoring>", "aggregation": "<agg>", "metricOutputType": "<float|string>"}'
 ```
 
-Width options: 48 (full), 24 (half), 16 (third). Aggregation values: `sum`, `count`, `avg`, `max`, `min`, `success`.
+Width options: 48 (full), 24 (half), 16 (third), 12 (fourth).
 
-Optional config: `precision`, `units`, `showAsPercentage`, `bucketInterval`, `groupBy`, `filters`
+For **binary YES/NO metrics as 100% stacked bar**: use `visualizationType: "bar"` with `aggregation: "count"`, `metricOutputType: "string"`, `stacked: true`, `showAsPercentage: true`.
+
+For **float metrics as line charts**: use `visualizationType: "line"` with `aggregation: "avg"`, `metricOutputType: "float"`.
 
 #### Table widgets
 
@@ -269,18 +293,18 @@ coval dashboards widgets create <dashboard_id> \
 
 **Table widget rules:**
 - Always full-width (48 cols)
-- Always use `aggregation: "success"` — this handles both float and string metrics correctly. Using `"avg"` breaks string metrics.
-- Always use `groupBy: "agent"` — splits rows by agent so you can compare performance across agents.
-- Put metric IDs in `filters.metricIds` (NOT top-level `metricIds`) — the frontend reads `filters.metricIds` first.
+- Always use `aggregation: "success"` — handles both float and string metrics correctly.
+- Always use `groupBy: "agent"` — splits rows by agent for comparison.
+- Put metric IDs in `filters.metricIds` (NOT top-level `metricIds`).
 
 ### Grid position tracking
 
 Track `grid_y` as you create rows:
 - Row 0: text header (h=2) → next y = 2
-- Row 2: statistics (h=12) → next y = 14
-- Row 14: text header (h=2) → next y = 16
-- Row 16: charts (h=8) → next y = 24
-- Row 24: table (h=8) → next y = 32
+- Row 2: charts (h=8) → next y = 10
+- Row 10: text header (h=2) → next y = 12
+- Row 12: charts (h=8) → next y = 20
+- Row 20: table (h=8) → next y = 28
 
 ## Phase 3: Verify + Fix Layout
 
@@ -292,26 +316,25 @@ coval dashboards widgets list <dashboard_id> --format json
 
 ### Step 2: Verify and show evidence
 
-**Show the user the raw widget list output** as proof of correct layout. Then verify:
+**Show the user the raw widget list output** as proof. Then verify:
 
-- Widget sizes (`grid_w`, `grid_h`) respect type minimums (chart ≥ 12w×8h, statistic ≥ 10w×12h, table ≥ 4w×8h, text ≥ 12w×2h)
-- Each row's widgets should sum to exactly **48 columns** wide
+- Widget sizes respect type minimums (chart ≥ 12w×8h, statistic ≥ 10w×12h, table ≥ 4w×8h, text ≥ 12w×2h)
+- Each row's widgets sum to exactly **48 columns**
 - No unexpected size adjustments from the server
 
 Present the verification result:
 
 ```
 Layout verified:
-  ✓ Row 0: text 48w = 48 ✓
-  ✓ Row 2: stat 16w + stat 16w + stat 16w = 48 ✓
-  ✓ Row 14: text 48w = 48 ✓
-  ✓ Row 16: chart 24w + chart 24w = 48 ✓
-  ✓ Row 24: table 48w = 48 ✓
-  ✓ All widget sizes meet type minimums
-  ✓ No server-side adjustments detected
+  ✓ Row 0: text 48w = 48
+  ✓ Row 2: line 24w + line 24w = 48
+  ✓ Row 10: text 48w = 48
+  ✓ Row 12: bar 24w + bar 24w = 48
+  ✓ Row 20: table 48w = 48
+  ✓ All sizes meet minimums
 ```
 
-> **Note:** When you set `--grid-x` and `--grid-y` during creation, the positions are persisted and returned in the response. Always set explicit positions to ensure a clean layout.
+> **Note:** When you set `--grid-x` and `--grid-y` during creation, the positions are persisted and returned in the response.
 
 ### Step 3: Fix any issues
 
@@ -321,7 +344,7 @@ coval dashboards widgets update <dashboard_id> <widget_id> --grid-x <x> --grid-y
 
 ## Phase 4: Summary
 
-Once all widgets are created and verified, immediately tell the user their dashboard is ready and give them the link to open it:
+Once all widgets are created and verified, tell the user their dashboard is ready:
 
 ```
 Your dashboard is ready!
@@ -335,13 +358,10 @@ Your dashboard is ready!
   Layout:
   | Widget              | Type      | Size   | Metric              |
   |---------------------|-----------|--------|---------------------|
-  | Key Metrics         | text      | 48×2   | —                   |
-  | Latency             | statistic | 16×12  | Latency             |
-  | <top metric>        | statistic | 16×12  | <metric name>       |
+  | Response Performance| text      | 48×2   | —                   |
+  | Latency             | line      | 24×8   | Latency             |
   | ...                 | ...       | ...    | ...                 |
 ```
-
-The dashboard link is the most important output — make it prominent so the user can open it in their browser right away.
 
 **Always suggest next steps:**
 - Run more evaluations to enrich the data: `/quick-eval`
