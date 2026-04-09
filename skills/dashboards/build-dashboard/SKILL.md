@@ -44,8 +44,11 @@ If they choose **improve existing**:
 - Analyze what's already there: which metrics are visualized, what viz types are used, what's missing
 - **Improving means REBUILDING the dashboard** — delete ALL existing widgets and recreate from scratch with the full metric set and correct viz types. Do NOT just append more widgets to the bottom. The dashboard should look cohesive, not like layers of additions.
 - To delete existing widgets: `coval dashboards widgets delete <dashboard_id> <widget_id>`
-- Check if any metrics have **no data yet** (newly created metrics that haven't been run). If so, tell the user: "Some metrics have no data yet (e.g., <metric name>). The dashboard will show empty charts for those. Want to run `/quick-eval` first to generate data for them?"
-- If yes, invoke `/quick-eval` with the new metrics included, wait for completion, then proceed.
+- Check if any metrics have **no data yet** (newly created metrics that haven't been run in the last 7 days). To check: look at the metric frequency analysis — any metric with 0 appearances has no data.
+- **If metrics have no data, STOP and run evals first.** Do NOT build a dashboard with empty widgets. Tell the user:
+  > "<metric name> has no data yet. I need to run an evaluation with this metric first so the dashboard has something to show."
+- Then invoke `/quick-eval` with the new metrics attached to the agent. Wait for completion. Only then proceed to rebuild.
+- **There is no "skip and build anyway" path.** Empty charts are useless — same principle as the no-data gate.
 - Then proceed to Phase 1 to plan the new layout from scratch, incorporating all metrics (old + new)
 
 If they choose **create new** or there are no existing dashboards:
