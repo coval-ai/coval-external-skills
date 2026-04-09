@@ -1,6 +1,6 @@
 ---
-name: setup-dashboard
-description: Plan and build a Coval dashboard with metric visualizations backed by real data. Analyzes usage patterns (simulations vs monitoring) and metric frequency to build a data-driven layout. Use when user says "create a dashboard", "build a dashboard", "set up a dashboard", "visualize my metrics", "make a performance dashboard", or "dashboard for my runs".
+name: build-dashboard
+description: Build or improve a Coval dashboard with metric visualizations backed by real data. Creates new dashboards from scratch or enhances existing ones by analyzing usage patterns, metric frequency, and gaps. Use when user says "create a dashboard", "build a dashboard", "improve my dashboard", "add widgets", "visualize my metrics", "make a performance dashboard", or "dashboard for my runs".
 argument-hint: "[dashboard-purpose-or-name]"
 ---
 

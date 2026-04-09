@@ -6,7 +6,7 @@ Skills for creating and managing Coval dashboards.
 
 | Skill | Description |
 |-------|-------------|
-| [setup-dashboard](./setup-dashboard/) | Interactive guide to plan and build a dashboard with metric visualizations |
+| [build-dashboard](./build-dashboard/) | Build or improve a dashboard with data-driven metric visualizations |
 
 ## Overview
 
