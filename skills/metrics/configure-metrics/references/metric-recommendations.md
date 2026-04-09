@@ -68,8 +68,8 @@ Create ONE custom llm-binary metric based on the use case.
 
 If the user provided a critical requirement in Phase 4, create an additional llm-binary metric:
 
-- **Name**: Use the critical requirement text (truncated to 200 chars if needed)
-- **Description**: Custom metric based on user's #1 priority
+- **Name**: Convert the user's requirement into a **short Title Case noun phrase** following the built-in naming convention (e.g., "Caller Identity Verification", "Feature Claim Accuracy", "Policy Number Collection"). Do NOT use the raw sentence as the name.
+- **Description**: The user's full requirement text
 - **Prompt**: "Given the transcript, did the agent satisfy this requirement: [CRITICAL REQUIREMENT]? Return YES if the requirement was met. Return NO if the requirement was violated or not addressed."
 
 Replace `[CRITICAL REQUIREMENT]` with the user's exact text.

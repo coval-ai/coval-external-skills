@@ -153,12 +153,16 @@ Ask: "What's the #1 thing your agent MUST get right?"
 
 If the user provides a requirement:
 1. Create an additional llm-binary metric using the critical requirement template from `references/metric-recommendations.md`
-2. Replace `[CRITICAL REQUIREMENT]` in the template with the user's exact text
+2. **Convert the user's requirement into a short Title Case metric name** — do NOT use the raw requirement text as the name. Follow the built-in metric naming convention: short noun phrases like "Caller Identity Verification", "Issue Resolution", "Order Accuracy". Examples:
+   - "The agent must verify caller identity before sharing account details" → `"Caller Identity Verification"`
+   - "The agent should never promise features that don't exist" → `"Feature Claim Accuracy"`
+   - "Make sure the agent collects the policy number" → `"Policy Number Collection"`
+3. Use the user's full requirement text in the `--prompt` and `--description` fields — that's where the detail belongs.
 
 ```bash
 coval metrics create \
-  --name "<requirement text (truncated to 200 chars)>" \
-  --description "Custom metric based on #1 priority" \
+  --name "<short Title Case name>" \
+  --description "<user's full requirement text>" \
   --type llm-binary \
   --prompt "Given the transcript, did the agent satisfy this requirement: <user's requirement>? Return YES if the requirement was met. Return NO if the requirement was violated or not addressed." \
   --format json
