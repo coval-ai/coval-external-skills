@@ -193,24 +193,24 @@ The default visualization for most metrics should be a **time series chart** (li
 
 **Use fourths (12-col) when you have 4+ metrics in a section.** Don't force everything into halves and thirds — if you have 4 similar float metrics, put them in a row of 4 line charts at 12 cols each.
 
-**Pie chart layout:** Pie charts need more height for their legend. When a pie chart is on the dashboard, use this layout pattern — a 2×2 grid of smaller charts on the left with the pie chart spanning the full height on the right:
+**Pie chart layout:** Pie charts need more height for their legend. Use a 2×2 grid of wider charts on the left with a narrower tall pie on the right:
 
 ```
-┌──────────────┬──────────────┬────────────────────────┐
-│  Chart 12×8  │  Chart 12×8  │                        │
-├──────────────┼──────────────┤   Pie Chart 24×16      │
-│  Chart 12×8  │  Chart 12×8  │                        │
-└──────────────┴──────────────┴────────────────────────┘
+┌──────────────────┬──────────────────┬──────────────┐
+│  Chart 18×8      │  Chart 18×8      │              │
+├──────────────────┼──────────────────┤  Pie 12×16   │
+│  Chart 18×8      │  Chart 18×8      │              │
+└──────────────────┴──────────────────┴──────────────┘
 ```
 
-Grid positions for this pattern (assuming starting at y=N):
-- Top-left chart: grid-x=0, grid-y=N, grid-w=12, grid-h=8
-- Top-right chart: grid-x=12, grid-y=N, grid-w=12, grid-h=8
-- Bottom-left chart: grid-x=0, grid-y=N+8, grid-w=12, grid-h=8
-- Bottom-right chart: grid-x=12, grid-y=N+8, grid-w=12, grid-h=8
-- Pie chart: grid-x=24, grid-y=N, grid-w=24, grid-h=16
+Grid positions (starting at y=N):
+- Top-left: grid-x=0, grid-y=N, grid-w=18, grid-h=8
+- Top-right: grid-x=18, grid-y=N, grid-w=18, grid-h=8
+- Bottom-left: grid-x=0, grid-y=N+8, grid-w=18, grid-h=8
+- Bottom-right: grid-x=18, grid-y=N+8, grid-w=18, grid-h=8
+- Pie: grid-x=36, grid-y=N, grid-w=12, grid-h=16
 
-This uses the 2×2 charts to fill the left 24 cols (2 rows of 8h = 16h total) while the pie chart spans the right 24 cols at 16h. Total: 24+24=48 width, 16h tall.
+Total: 18+18+12=48 width, 16h tall. The wider charts (18 col) give more room for time series data while the pie stays compact.
 
 **Compose sections based on what metrics you have:**
 
