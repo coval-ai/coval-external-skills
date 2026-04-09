@@ -133,6 +133,7 @@ Optional: `precision`, `units`, `showAsPercentage`, `bucketInterval`, `groupBy`,
 - `aggregation: "success"` handles both float and string metrics.
 - `groupBy: "agent"` splits rows by agent.
 - Metric IDs go in `filters.metricIds`, not top-level.
+- **Only include metrics with a success condition** (binary YES/NO, metrics with targets). Exclude raw floats like Latency, Audio Duration, Turn Count, Words Per Message — they don't have pass/fail so they show meaningless values in a success table.
 
 ### Text config
 ```json

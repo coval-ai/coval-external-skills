@@ -296,6 +296,7 @@ coval dashboards widgets create <dashboard_id> \
 - Always use `aggregation: "success"` — handles both float and string metrics correctly.
 - Always use `groupBy: "agent"` — splits rows by agent for comparison.
 - Put metric IDs in `filters.metricIds` (NOT top-level `metricIds`).
+- **Only include metrics that have a success condition** — binary YES/NO metrics (Issue Resolution, Professional Tone, Caller Identity Verification, etc.) and metrics with target conditions. **Exclude raw float metrics** like Audio Duration, Long Pause Detection, Turn Count, Words Per Message, Latency — these don't have a pass/fail threshold so they show meaningless values in a success table. They belong in line charts, not the summary table.
 
 ### Grid position tracking
 
