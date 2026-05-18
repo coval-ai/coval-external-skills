@@ -38,13 +38,42 @@ Identify:
 - existing telemetry owner: OpenTelemetry, Sentry, Datadog, Honeycomb, Langfuse, Arize, LangSmith, Traceloop, or custom OTLP exporter
 - short-lived process behavior and shutdown/flush path
 
-Return a concise analysis summary. If the target service or correlation path is ambiguous, ask the user before editing.
+Return a concise analysis summary. If the target service or repo scope is
+ambiguous, ask before editing. Do not ask the customer to choose a correlation
+route from a menu. Customers usually cannot know whether SIP headers, pre-call
+webhooks, or trigger payloads are supported from the outside; infer the best
+route from the discovered agent configuration and the decision rules below.
 
 ## Phase 2: Pick The Correlation Path
 
 Use exactly one target header per export:
 - simulations: `X-Simulation-Id` with the simulation output ID
 - conversation monitoring: `X-Conversation-Id` with the `conversation_id` returned by `POST /v1/conversations:submit`
+
+Pick the route yourself when the repo and Coval agent configuration make one
+route clearly safer. Do not present an open-ended "which route should I use?"
+question. Use this decision order:
+
+1. If the current connection path already delivers a Coval ID into the process,
+   use that path. Examples: SIP participant attributes, outbound trigger
+   payload, WebSocket initialization payload, or a monitoring
+   `conversation_id`.
+2. If the current Coval agent record or fetched OpenAPI confirms an existing
+   pre-call/registration webhook field and the service already exposes a
+   suitable endpoint, configure or reuse that webhook.
+3. For inbound PSTN phone agents with no verified SIP headers and no confirmed
+   Coval pre-call webhook wiring, default to a self-contained registration
+   endpoint plus a smoke launcher that registers `simulation_output_id` right
+   before the call. This is the safest first validation because it does not
+   guess at Coval agent metadata shape or mutate customer agent config. After it
+   works, state the production upgrade: wire the same endpoint into the verified
+   Coval pre-call webhook field when available, or provision SIP if the customer
+   needs Coval-managed per-call injection.
+4. Ask a customer question only when every viable route requires a policy or
+   deployment decision you cannot infer, such as whether you may expose a new
+   public webhook, update the Coval agent configuration, or provision a SIP
+   route. In that case, give one recommendation first, explain why, and ask for
+   the smallest approval needed.
 
 Choose the route from `../references/agent-type-routing.md`:
 - SIP inbound voice: extract `X-Coval-Simulation-Id` from SIP headers or framework participant attributes.

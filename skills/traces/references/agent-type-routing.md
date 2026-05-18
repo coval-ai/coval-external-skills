@@ -25,6 +25,29 @@ Supported options:
 - Prefer SIP provisioning if the customer's voice stack can expose a SIP URI.
 - Otherwise configure Coval `pre_call_webhook_url` to call a customer endpoint before dialing. The endpoint should queue `simulation_output_id` and match it to the incoming call by caller ID, call SID, or FIFO only when concurrency is controlled.
 
+Decision rules:
+- If the fetched Coval agent configuration already contains a verified
+  `pre_call_webhook_url` or equivalent registration-webhook field, use that
+  field. Patch only the confirmed field shape, and redact provider metadata in
+  any output you show.
+- If the repo already exposes an authenticated HTTP endpoint that Coval or a
+  smoke launcher can call before the PSTN call, reuse it and store the
+  `simulation_output_id` with a short TTL.
+- If there is no verified Coval pre-call field yet, but the agent service can
+  expose a small endpoint, choose an additive `POST /register-simulation`
+  endpoint plus a smoke launcher as the first validation path. This is the
+  recommended default for local/customer testing because it is self-contained,
+  proves the trace exporter and PSTN correlation logic, and avoids guessing at
+  Coval-side metadata shape.
+- After the self-contained path works, recommend the durable production wiring:
+  connect the same registration endpoint to the verified Coval pre-call webhook
+  field when supported, or provision SIP when the customer needs Coval to inject
+  the ID automatically for every simulation.
+- Do not ask "FIFO or pre-call webhook?" as a customer-facing choice. Choose
+  based on the current agent config. Ask only for a concrete missing permission,
+  such as approval to expose a webhook, update the Coval agent config, or
+  provision SIP.
+
 Implementation pattern:
 1. Add an authenticated registration endpoint such as `POST /register-simulation`.
 2. Validate a shared secret or Coval API key header.
