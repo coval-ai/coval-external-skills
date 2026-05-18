@@ -17,6 +17,7 @@ This repository contains reusable skills for interacting with Coval's evaluation
 | [Personas](./skills/personas/) | Define simulation personas for testing |
 | [Test Cases](./skills/test-cases/) | Build and organize evaluation test cases (includes HuggingFace import) |
 | [Metrics](./skills/metrics/) | Configure evaluation metrics and scoring |
+| [Traces](./skills/traces/) | Configure, enrich, measure, and debug OpenTelemetry traces |
 | [Migrations](./skills/migrations/) | Migrate from other testing platforms |
 
 ## Quick Start
