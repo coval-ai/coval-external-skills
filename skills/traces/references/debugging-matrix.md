@@ -20,8 +20,12 @@ Use the first matching symptom, then verify the fix with a real Coval run or con
 | Duplicated spans | Successful batch resent | Compare identical span IDs/timestamps | Retry failed batches only; dedupe only in future exports |
 | Custom trace metric says no spans | Span name mismatch or no traces in that simulation | Trace Search exact span name | Use emitted span name or fix instrumentation |
 | Metric attribute missing | Attribute absent or non-numeric | Inspect trace detail | Emit numeric attr or choose span-level aggregation |
+| Custom trace metric create rejects aggregation | Target API validation lags current backend/frontend supported methods | Read response details and OpenAPI | Use accepted numeric fallback; document drift |
 | PSTN inbound missing IDs | Expected SIP header on phone network | Inspect provider setup event | Use SIP or pre-call registration webhook |
 | WebSocket missing IDs | Initialization/setup payload omitted simulation ID | Inspect first frame/setup request | Add simulation output ID to initialization JSON |
+| WebSocket run has no assistant audio | Agent waited for more audio/silence than Coval sends | Compare received bytes to response threshold | Lower threshold or force response earlier |
+| `tts` span shows WebSocket disconnect | Agent streamed after Coval closed the socket | Inspect span exception and sent byte counts | Shorten response or stop streaming on disconnect |
+| Deployed agent cannot import tracing helper | Helper module/dependency not copied to image or bundle | Check deploy logs and Dockerfile/package manifest | Copy helper and dependency files into deploy artifact |
 | Conversation traces missing | Spans exported before submit without conversation ID or never flushed | Inspect call-end flow | Buffer spans, submit, then export with `X-Conversation-Id` |
 
 ## Trace Search Queries

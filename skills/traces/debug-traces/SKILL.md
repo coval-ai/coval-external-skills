@@ -76,6 +76,8 @@ High-probability causes:
 - payload over roughly 3-4 MB
 - retry resent already accepted spans
 - only auto-instrumented provider spans exist, so the trace lacks STT/TTS/tool context
+- tracing helper files or OpenTelemetry dependencies were added locally but not copied into the deployed image/bundle
+- WebSocket smoke tests sent less audio than the agent's response threshold, or the agent streamed a long canned response after Coval closed the socket
 
 ## Phase 4: Verify In Coval UI
 

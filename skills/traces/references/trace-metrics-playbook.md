@@ -19,6 +19,12 @@ Span-level aggregations:
 - `error_rate`
 - `success_rate`
 
+Backend/frontend main supports the full list above. Before automating metric
+creation through `POST /v1/metrics`, check the target environment's validation.
+Some production API deployments accept only `average`, `median`, `p90`, `max`,
+and `min`; use one of those numeric aggregations as a fallback and record the
+broader desired metric as API/docs drift.
+
 Units:
 - `s`
 - `ms`
@@ -102,6 +108,7 @@ For each metric:
 5. Create the metric with `METRIC_CUSTOM_TRACE`.
 6. Attach it to the agent or run.
 7. Run a small evaluation and verify it computes.
+8. If the API rejects an aggregation that exists in current code, create a production-safe fallback metric only when it still answers a useful question.
 
 ## Example API Payloads
 

@@ -28,6 +28,11 @@ If the CLI cannot create the required metric shape, use the API after fetching t
 curl -fsS https://api.coval.dev/v1/openapi
 ```
 
+Treat the live target API as authoritative. On `api.coval.dev`, custom trace
+metric validation may lag the current backend/frontend code. If create returns
+an aggregation-method validation error, fall back to the accepted production set
+for that environment and call out the drift in the handoff.
+
 Collect:
 - agent ID and type
 - recent run or conversation with traces
@@ -56,7 +61,17 @@ Coval custom trace metric fields:
 - `aggregation_method`: one of `average`, `median`, `p90`, `p95`, `p99`, `max`, `min`, `sum`, `count`, `error_rate`, `success_rate`
 - `unit`: optional display unit such as `s`, `ms`, `count`, `percent`, `tokens`, `ratio`, or `score`
 
-For `count`, `error_rate`, and `success_rate`, omit `metric_attribute` unless the current API explicitly requires it. These are span-level aggregations.
+Current backend/frontend code supports the full aggregation list above. Some
+deployed public API versions only accept `average`, `median`, `p90`, `max`, and
+`min` through `POST /v1/metrics`. When the API rejects `count`, `error_rate`,
+`success_rate`, `p95`, `p99`, or `sum`, create a production-safe numeric metric
+such as `average` or `p90` against a real numeric attribute, then document the
+unsupported desired metric as a platform/docs drift item.
+
+For `count`, `error_rate`, and `success_rate`, omit `metric_attribute` when the
+target API allows it. If a deployed API still requires an attribute, use a
+known-present span attribute only when that preserves the metric's meaning;
+otherwise do not create the metric from API automation.
 
 Example API body:
 ```json
@@ -80,6 +95,7 @@ After creating metrics:
 2. Launch or rerun one small evaluation.
 3. Confirm the metric computes and does not error with "No spans named..." or "metric_attribute is required".
 4. If a metric errors because data is missing, fix the instrumentation rather than changing the metric to measure a less useful signal.
+5. If the creation API rejects a valid-in-code aggregation, keep the validated fallback metric small and explicit, and include the rejected response in the validation notes.
 
 ## Phase 4: Handoff
 

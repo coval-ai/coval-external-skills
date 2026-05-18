@@ -53,6 +53,18 @@ Choose the route from `../references/agent-type-routing.md`:
 - WebSocket voice/chat: carry the simulation output ID in the initial setup payload or initialization JSON.
 - Conversation monitoring: buffer spans during the call, submit the conversation at call end, then export buffered spans with `X-Conversation-Id`.
 
+For direct WebSocket agents, prefer configuring Coval metadata with an explicit initialization payload such as:
+
+```json
+{"simulation_id": "{{simulation_id}}"}
+```
+
+Then treat the first non-audio frame as setup metadata, extract `simulation_id` or
+`simulation_output_id`, and only export with `X-Simulation-Id` after that ID is
+present. Current production examples use `{{simulation_id}}`; if docs mention
+`{{simulation_output_id}}`, verify current agent metadata behavior before
+hardcoding either name.
+
 ## Phase 3: Implement Additive Instrumentation
 
 Prefer an existing telemetry owner. If the app already has a `TracerProvider`, add a Coval exporter/processor to it instead of replacing the provider. If there is no telemetry setup, create one central module such as `coval_tracing.py`, `covalTracing.ts`, or `coval_tracing.go`.
@@ -67,6 +79,9 @@ Implementation requirements:
 - Use `BatchSpanProcessor` or equivalent for high-volume agents and keep batches comfortably below 3-4 MB
 - Flush/shutdown tracing before short-lived processes exit
 - Retry only failed batches; Coval stores spans append-only and does not deduplicate successful retries
+- Update deployment packaging. Dockerfiles, serverless bundles, Pipecat Cloud
+  packages, and Fly/Render/Heroku deploys must include any new tracing helper
+  module and dependency files.
 
 For Python voice agents, the Coval wizard's generated `coval_tracing.py` pattern is an acceptable baseline, but improve it for the discovered connection path and existing telemetry.
 
@@ -97,6 +112,13 @@ Then prove Coval ingestion:
 2. Confirm the trace export returns 200. A 404 from the standalone test script only proves auth/connectivity, not lifecycle wiring.
 3. Open the Coval run or conversation result and verify the OTel Traces card or Trace Search result appears.
 4. Inspect the trace for expected spans and attributes.
+
+For WebSocket agents, make the smoke interaction long enough to trigger the
+agent's response threshold. A client that sends too little audio, or an agent
+that waits for more silence/audio than Coval sends, can make tracing look broken
+even when the exporter is wired correctly. If a `tts` span is marked `ERROR`
+with a WebSocket disconnect after partial audio, shorten the canned response or
+stop streaming when the client closes.
 
 Optional connectivity-only check:
 ```bash
