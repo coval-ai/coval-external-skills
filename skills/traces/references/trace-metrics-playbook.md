@@ -19,11 +19,10 @@ Span-level aggregations:
 - `error_rate`
 - `success_rate`
 
-Backend/frontend main supports the full list above. Before automating metric
-creation through `POST /v1/metrics`, check the target environment's validation.
-Some production API deployments accept only `average`, `median`, `p90`, `max`,
-and `min`; use one of those numeric aggregations as a fallback and record the
-broader desired metric as API/docs drift.
+The target environment's public API/OpenAPI is authoritative for metric
+creation. Some production API deployments accept only `average`, `median`,
+`p90`, `max`, and `min`; use one of those numeric aggregations as a fallback and
+record the broader desired metric as public API/docs drift.
 
 Units:
 - `s`

@@ -29,9 +29,9 @@ curl -fsS https://api.coval.dev/v1/openapi
 ```
 
 Treat the live target API as authoritative. On `api.coval.dev`, custom trace
-metric validation may lag the current backend/frontend code. If create returns
-an aggregation-method validation error, fall back to the accepted production set
-for that environment and call out the drift in the handoff.
+metric validation can vary by deployed environment. If create returns an
+aggregation-method validation error, fall back to the accepted production set
+for that environment and call out the public API/docs drift in the handoff.
 
 Collect:
 - agent ID and type
@@ -61,12 +61,13 @@ Coval custom trace metric fields:
 - `aggregation_method`: one of `average`, `median`, `p90`, `p95`, `p99`, `max`, `min`, `sum`, `count`, `error_rate`, `success_rate`
 - `unit`: optional display unit such as `s`, `ms`, `count`, `percent`, `tokens`, `ratio`, or `score`
 
-Current backend/frontend code supports the full aggregation list above. Some
-deployed public API versions only accept `average`, `median`, `p90`, `max`, and
-`min` through `POST /v1/metrics`. When the API rejects `count`, `error_rate`,
-`success_rate`, `p95`, `p99`, or `sum`, create a production-safe numeric metric
-such as `average` or `p90` against a real numeric attribute, then document the
-unsupported desired metric as a platform/docs drift item.
+The public API/OpenAPI for the target environment is the source of truth for
+accepted aggregations. Some deployed API versions only accept `average`,
+`median`, `p90`, `max`, and `min` through `POST /v1/metrics`. When the API
+rejects `count`, `error_rate`, `success_rate`, `p95`, `p99`, or `sum`, create a
+production-safe numeric metric such as `average` or `p90` against a real
+numeric attribute, then document the unsupported desired metric as a public
+API/docs drift item.
 
 For `count`, `error_rate`, and `success_rate`, omit `metric_attribute` when the
 target API allows it. If a deployed API still requires an attribute, use a

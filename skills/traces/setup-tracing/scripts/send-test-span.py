@@ -113,7 +113,7 @@ def main() -> int:
         print(f"status={error.code}")
         if response_body:
             print(response_body)
-        known_fake_id = args.simulation_id == "wizard-test"
+        known_fake_id = args.simulation_id == "coval-tracing-test"
         return 0 if error.code == 404 and (args.allow_not_found or known_fake_id) else 1
     except Exception as error:  # noqa: BLE001
         print(f"error={error}", file=sys.stderr)

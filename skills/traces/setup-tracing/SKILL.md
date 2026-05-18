@@ -7,6 +7,14 @@ description: Configure an AI agent to send OpenTelemetry traces to Coval. Use wh
 
 Set up tracing in the customer's agent with the smallest additive change that produces a real Coval trace, then verify that trace against the agent's actual Coval connection path.
 
+Operate from the customer's agent side. Do not assume access to Coval internal
+backend, frontend, docs, wizard, research, or example source repositories, and
+do not ask the customer for them. Use only the customer's repo, public Coval
+docs, the Coval CLI/API, and fetched public OpenAPI specs. Code edits belong in
+the customer's agent/service repo. Coval-side changes must be limited to
+documented configuration through the Coval CLI, public API, or dashboard, and
+should be explained before mutation.
+
 ## Preflight
 
 1. Confirm the agent repo or service scope. In a monorepo, do not instrument every service unless the user explicitly asks.
@@ -20,7 +28,12 @@ Set up tracing in the customer's agent with the smallest additive change that pr
    ```bash
    curl -fsS https://api.coval.dev/v1/openapi
    ```
-4. Read the shared references before editing:
+4. Stay inside the customer-owned code surface. Do not reference or require
+   `coval-ai/backend`, `coval-ai/frontend`, `coval-ai/docs`,
+   `coval-ai/wizard`, internal engineering docs, or Coval example repos as
+   local source code. Public docs and installed skill reference files are the
+   support material available to the customer-side agent.
+5. Read the shared references before editing:
    - `../references/coval-tracing-reference.md`
    - `../references/agent-type-routing.md`
    - `../references/span-schema.md`
@@ -37,6 +50,8 @@ Identify:
 - where a per-call Coval ID can enter the agent process
 - existing telemetry owner: OpenTelemetry, Sentry, Datadog, Honeycomb, Langfuse, Arize, LangSmith, Traceloop, or custom OTLP exporter
 - short-lived process behavior and shutdown/flush path
+- customer-owned files that need edits, and any Coval configuration changes
+  that must be done through CLI/API/dashboard rather than code changes
 
 Return a concise analysis summary. If the target service or repo scope is
 ambiguous, ask before editing. Do not ask the customer to choose a correlation
@@ -112,7 +127,9 @@ Implementation requirements:
   packages, and Fly/Render/Heroku deploys must include any new tracing helper
   module and dependency files.
 
-For Python voice agents, the Coval wizard's generated `coval_tracing.py` pattern is an acceptable baseline, but improve it for the discovered connection path and existing telemetry.
+For Python voice agents, an existing generated `coval_tracing.py` helper in the
+customer repo is an acceptable baseline, but improve it for the discovered
+connection path and existing telemetry.
 
 ## Phase 4: Minimum Span Coverage
 
@@ -153,7 +170,7 @@ Optional connectivity-only check:
 ```bash
 python skills/traces/setup-tracing/scripts/send-test-span.py \
   --api-key "$COVAL_API_KEY" \
-  --simulation-id wizard-test
+  --simulation-id coval-tracing-test
 ```
 A 404 with `Simulation output not found` means the key reached Coval and auth worked, but it is not proof that the agent call lifecycle is wired.
 

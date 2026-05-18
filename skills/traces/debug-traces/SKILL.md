@@ -52,7 +52,7 @@ python skills/traces/setup-tracing/scripts/send-test-span.py \
 
 Interpretation:
 - 200 means Coval accepted and stored the test span for that target.
-- 404 for `wizard-test` or another known-fake ID means auth/connectivity worked but the target ID is not real. Use `--allow-not-found` for intentional fake-ID checks.
+- 404 for `coval-tracing-test` or another known-fake ID means auth/connectivity worked but the target ID is not real. Use `--allow-not-found` for intentional fake-ID checks.
 - 404 for a real target usually means wrong ID, wrong org key, or using a run ID instead of a simulation output ID.
 
 For conversation monitoring, use:
