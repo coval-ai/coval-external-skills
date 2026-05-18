@@ -153,11 +153,46 @@ go test ./...
 ```
 Use the checks that match the repo; do not invent package-manager commands.
 
-Then prove Coval ingestion:
-1. Run one real agent interaction through the same Coval agent type the customer uses.
-2. Confirm the trace export returns 200. A 404 from the standalone test script only proves auth/connectivity, not lifecycle wiring.
-3. Open the Coval run or conversation result and verify the OTel Traces card or Trace Search result appears.
-4. Inspect the trace for expected spans and attributes.
+Then start the Coval validation through CLI/API and do useful work while it
+runs. Coval simulations and monitoring conversations are asynchronous; do not
+sit idle after launching one.
+
+1. Use the discovered Coval CLI/API path to launch one real test through the
+   same Coval agent type the customer uses. Prefer CLI commands when available;
+   otherwise use the public API after fetching OpenAPI. Capture the run ID,
+   simulation output ID, conversation ID, dashboard URL, or polling endpoint
+   returned by the launch.
+2. Start a bounded poll loop through the CLI/API. Record the command or endpoint
+   used, poll interval, and timeout. Do not print API keys or raw provider
+   metadata from Coval agent responses.
+3. While the run is pending, continue with non-blocking trace improvement:
+   - add safe span enrichment visible from the code path, such as stable
+     `conversation`, `turn`, `stt`, `llm`, `tts`, `llm_tool_call`,
+     `transport`, or provider spans
+   - add bounded high-value attributes such as `metrics.ttfb`, token counts,
+     finish reasons, tool names, safe tool argument summaries, status, and
+     errors
+   - improve flush/shutdown, buffering, batch size, retry, or deployment
+     packaging issues found during implementation
+   - prepare custom trace metric candidates from expected spans and any
+     historical Coval traces already available
+4. Create custom trace metrics during the wait only when real trace data already
+   proves the span name and metric attribute exist, either from historical
+   traced runs or from the in-flight validation once spans appear in Trace
+   Search. If this validation is the first trace for the agent, stage the metric
+   definitions while waiting and create them immediately after the run produces
+   confirmed spans.
+5. When the run finishes, confirm the agent export returned 200 or that the
+   exporter logged a successful accepted batch. A 404 from the standalone test
+   script only proves auth/connectivity, not lifecycle wiring.
+6. Open the Coval run or conversation result and verify the OTel Traces card or
+   Trace Search result appears.
+7. Inspect the trace for expected spans and attributes. If it is missing, sparse,
+   duplicated, or attached to the wrong result, stop further metric creation and
+   apply `debug-traces` before continuing.
+8. After the initial trace is confirmed, finish any prepared metric creation and
+   run one follow-up calculation/preview/attached-run check through the CLI/API
+   when the public API supports it.
 
 For WebSocket agents, make the smoke interaction long enough to trigger the
 agent's response threshold. A client that sends too little audio, or an agent
@@ -180,6 +215,7 @@ End with:
 - files changed and why
 - exact correlation path used
 - how the customer sets required env vars
-- commands run
+- commands run, including the Coval launch and polling commands/API endpoints
 - Coval trace URL or simulation/conversation ID used for proof
+- custom trace metrics created, staged, or deferred and why
 - any remaining gaps to handle with `optimize-trace-observability`, `configure-trace-metrics`, or `debug-traces`

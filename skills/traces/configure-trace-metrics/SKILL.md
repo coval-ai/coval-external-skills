@@ -5,7 +5,11 @@ description: Recommend, create, preview, and attach Coval custom trace metrics f
 
 # Configure Coval Trace Metrics
 
-Create metrics from trace data only after at least one real trace exists for the target agent. If traces are absent or sparse, run `setup-tracing` or `optimize-trace-observability` first.
+Create metrics from trace data only after at least one real trace exists for the
+target agent. If a `setup-tracing` validation run is currently pending, use the
+waiting time to inventory existing traces and prepare metric definitions. Create
+metrics during the wait only when historical traces or the in-flight run already
+prove the target span and attribute exist.
 
 ## Read First
 
@@ -35,7 +39,8 @@ for that environment and call out the public API/docs drift in the handoff.
 
 Collect:
 - agent ID and type
-- recent run or conversation with traces
+- recent run or conversation with traces, or the in-flight validation run being
+  polled by `setup-tracing`
 - available span names and attributes from Trace Search suggestions, the trace viewer, or a copied trace dump
 - existing built-in trace metrics already attached
 - customer use case or vertical
@@ -50,7 +55,10 @@ Baseline recommendations:
 - conversation monitoring: p95/p99 latency, tool/API error rate, count of critical events, production fallback rate
 - custom business logic: one metric for the most important customer-specific workflow bottleneck or failure mode
 
-Do not create a custom trace metric for an attribute that is not present in actual trace data unless you are also adding that instrumentation.
+Do not create a custom trace metric for an attribute that is not present in
+actual trace data unless you are also adding that instrumentation and have a
+validation run in progress to prove it. In that case, stage the metric body and
+create it only after the span/attribute appears in Coval.
 
 ## Phase 2: Validate Config Shape
 
@@ -87,16 +95,22 @@ Example API body:
 }
 ```
 
-Create only after confirming the span/attribute exists in real traces.
+Create only after confirming the span/attribute exists in real traces. If the
+initial validation is still running, keep polling with the Coval CLI/API while
+you prepare the metric request bodies, then create the metrics as soon as Trace
+Search or the run trace output confirms the data.
 
 ## Phase 3: Attach And Verify
 
 After creating metrics:
 1. Attach them to the target agent or run configuration using the CLI/API path that matches the current OpenAPI.
-2. Launch or rerun one small evaluation.
-3. Confirm the metric computes and does not error with "No spans named..." or "metric_attribute is required".
-4. If a metric errors because data is missing, fix the instrumentation rather than changing the metric to measure a less useful signal.
-5. If the creation API rejects a valid-in-code aggregation, keep the validated fallback metric small and explicit, and include the rejected response in the validation notes.
+2. Launch or rerun one small evaluation through the Coval CLI/API, unless the
+   in-flight validation run already includes the newly attached metric.
+3. Poll the run through the CLI/API until it finishes. While waiting, inspect
+   trace quality or prepare the handoff instead of blocking.
+4. Confirm the metric computes and does not error with "No spans named..." or "metric_attribute is required".
+5. If a metric errors because data is missing, fix the instrumentation rather than changing the metric to measure a less useful signal.
+6. If the creation API rejects a valid-in-code aggregation, keep the validated fallback metric small and explicit, and include the rejected response in the validation notes.
 
 ## Phase 4: Handoff
 
