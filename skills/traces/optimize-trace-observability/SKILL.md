@@ -65,10 +65,15 @@ Minimum valuable set:
 - `stt.provider.<name>`: `stt.providerName`, `metrics.ttfb`, `stt.confidence`, error status when a provider fails
 - `llm`: `metrics.ttfb`, `llm.finish_reason`, `gen_ai.usage.input_tokens`, `gen_ai.usage.output_tokens`, model/provider metadata when available
 - `tts`: `metrics.ttfb`, provider/voice metadata when safe
-- `llm_tool_call`: `function.name`, `tool_call_id`, `function.arguments` if safe and bounded
+- `llm_tool_call`: `function.name`, `tool_call_id`, `function.arguments` if safe and bounded, `tool.latency_ms`, numeric `tool.error`, numeric `tool.dependency_unavailable`, `tool.result.count` when applicable
+- `conversation`: `tool.call.count`, `tool.failure.count`, numeric `workflow.completed`, numeric `workflow.dependency_blocked`, numeric `workflow.fallback_used` when the session boundary is available
 - custom spans: one numerical attribute that can become a custom trace metric, such as `duration_ms`, `retry_count`, `confidence_score`, `queue_wait_ms`, or `external_api_latency_ms`
 
 Set OTel status to `ERROR` on failing provider/tool/API spans. Coval custom trace metrics can calculate `error_rate` and `success_rate` from span status.
+
+Also emit numeric `0`/`1` flags for important rates. Some public metric
+creation APIs require a numeric `metric_attribute`; `average` over these flags
+preserves the rate while still working in those environments.
 
 ## Phase 4: Protect Customers
 
@@ -83,6 +88,12 @@ Before committing enrichment, remove or bound:
 Prefer summaries and counts:
 - `tool.result.count`
 - `tool.result.success`
+- `tool.error`
+- `tool.call.count`
+- `tool.failure.count`
+- `workflow.completed`
+- `workflow.dependency_blocked`
+- `workflow.fallback_used`
 - `prompt.message_count`
 - `response.length`
 - `http.status_code`

@@ -6,13 +6,13 @@ Use stable, Coval-recognized span names so the trace viewer, Trace Search, built
 
 | Span | Use | Recommended Attributes |
 |------|-----|------------------------|
-| `conversation` | Full call/session root | `call.duration_seconds`, safe `session.id`, safe `customer.workflow` |
+| `conversation` | Full call/session root | `call.duration_seconds`, safe `session.id`, safe `customer.workflow`, `tool.call.count`, `tool.failure.count`, `workflow.completed`, `workflow.dependency_blocked`, `workflow.fallback_used` |
 | `turn` | One user/assistant turn | turn index, safe turn classification |
 | `stt` | Final speech-to-text result | `transcript`, `metrics.ttfb`, `stt.confidence` |
 | `stt.provider.<name>` | STT provider attempt or fallback | `stt.providerName`, `metrics.ttfb`, `stt.confidence` |
 | `llm` | Model invocation | `metrics.ttfb`, `llm.finish_reason`, `gen_ai.usage.input_tokens`, `gen_ai.usage.output_tokens` |
 | `tts` | Text-to-speech invocation | `metrics.ttfb`, provider and voice metadata when safe |
-| `llm_tool_call` | Function/tool execution | `function.name`, `tool_call_id`, `function.arguments` when safe |
+| `llm_tool_call` | Function/tool execution | `function.name`, `tool_call_id`, `function.arguments` when safe, `tool.latency_ms`, `tool.error`, `tool.dependency_unavailable`, `tool.result.count` |
 | `vad` | Voice activity detection | confidence, segment duration, state when useful |
 | `pipeline` | Agent pipeline wrapper | framework or stage metadata |
 | `transport` | Audio/network transport | provider, codec, connection mode, network errors |
@@ -33,6 +33,8 @@ New integrations should emit canonical names.
 - Token usage needs `gen_ai.usage.input_tokens` and `gen_ai.usage.output_tokens` on `llm`.
 - Tool call analysis needs `llm_tool_call` with `function.name`.
 - Custom trace metrics need stable span names and numeric attributes for numeric aggregations.
+- Rate-style custom trace metrics should use numeric `0`/`1` attributes when
+  the target API requires a `metric_attribute`.
 
 ## Status And Errors
 
@@ -45,6 +47,11 @@ Set the span status to `ERROR` for failed tool calls, provider attempts, API cal
 
 Do not encode failures only in span names. Coval custom trace metrics can calculate `error_rate` and `success_rate` from status.
 
+When the deployed metric API requires numeric attributes for rates, also set a
+matching `0`/`1` attribute such as `tool.error`,
+`tool.dependency_unavailable`, `workflow.dependency_blocked`,
+`workflow.completed`, or `workflow.fallback_used`.
+
 ## Good Custom Attributes
 
 Choose attributes that answer a debugging or measurement question:
@@ -56,6 +63,14 @@ Choose attributes that answer a debugging or measurement question:
 - `confidence_score`
 - `tool.result.success`
 - `tool.result.count`
+- `tool.error`
+- `tool.latency_ms`
+- `tool.dependency_unavailable`
+- `tool.call.count`
+- `tool.failure.count`
+- `workflow.completed`
+- `workflow.dependency_blocked`
+- `workflow.fallback_used`
 - `fallback.used`
 - `policy.blocked`
 - `appointment.lookup_latency_ms`

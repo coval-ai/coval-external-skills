@@ -11,6 +11,12 @@ waiting time to inventory existing traces and prepare metric definitions. Create
 metrics during the wait only when historical traces or the in-flight run already
 prove the target span and attribute exist.
 
+Quality bar: proof-of-ingest metrics are not the finish line. A metric that
+only proves traces arrived, such as generic call duration or raw span count, is
+diagnostic unless it answers a customer decision. Prefer metrics that expose a
+workflow bottleneck, user-impacting failure, dependency health issue, latency
+tail, cost driver, fallback, handoff, or completion signal.
+
 ## Read First
 
 Load:
@@ -49,11 +55,21 @@ Collect:
 
 Use the playbook to propose a small set. Prefer 3-6 high-signal metrics over a large noisy bundle.
 
+For each candidate, write the customer question it answers. Drop or label the
+metric as diagnostic-only if the question is only "did tracing work?"
+
 Baseline recommendations:
 - voice agents: LLM/TTS/STT TTFB, token usage, tool call count, STT WER when `stt` spans include `transcript`
 - realtime or WebSocket agents: model/realtime latency, response TTFB, token usage, stream/error spans
 - conversation monitoring: p95/p99 latency, tool/API error rate, count of critical events, production fallback rate
 - custom business logic: one metric for the most important customer-specific workflow bottleneck or failure mode
+
+High-signal first set when the trace includes tool or workflow spans:
+- Dependency Blocked Rate: required external dependency prevented completion
+- Tool Failure Rate: tool/API calls returned errors or unusable responses
+- Tool Calls Per Conversation: workflow complexity and integration load
+- Tool Latency P90: slow downstream tools before they become call failures
+- Workflow Completion or Fallback Rate: whether the intended customer outcome happened
 
 Do not create a custom trace metric for an attribute that is not present in
 actual trace data unless you are also adding that instrumentation and have a
@@ -76,6 +92,13 @@ rejects `count`, `error_rate`, `success_rate`, `p95`, `p99`, or `sum`, create a
 production-safe numeric metric such as `average` or `p90` against a real
 numeric attribute, then document the unsupported desired metric as a public
 API/docs drift item.
+
+Production-safe rate pattern: emit numeric `0`/`1` attributes and aggregate with
+`average` when span-level rate aggregations are not accepted. Examples:
+- `llm_tool_call` / `tool.error` / `average` / `ratio`
+- `llm_tool_call` / `tool.dependency_unavailable` / `average` / `ratio`
+- `conversation` / `workflow.dependency_blocked` / `average` / `ratio`
+- `conversation` / `workflow.completed` / `average` / `ratio`
 
 For `count`, `error_rate`, and `success_rate`, omit `metric_attribute` when the
 target API allows it. If a deployed API still requires an attribute, use a
@@ -109,14 +132,19 @@ After creating metrics:
 3. Poll the run through the CLI/API until it finishes. While waiting, inspect
    trace quality or prepare the handoff instead of blocking.
 4. Confirm the metric computes and does not error with "No spans named..." or "metric_attribute is required".
-5. If a metric errors because data is missing, fix the instrumentation rather than changing the metric to measure a less useful signal.
-6. If the creation API rejects a valid-in-code aggregation, keep the validated fallback metric small and explicit, and include the rejected response in the validation notes.
+5. Confirm the computed value is interpretable for the customer question. If it
+   computes but is only a tracing proof, mark it diagnostic and replace it with
+   a higher-signal metric before handoff.
+6. If a metric errors because data is missing, fix the instrumentation rather than changing the metric to measure a less useful signal.
+7. If the creation API rejects a valid-in-code aggregation, keep the validated fallback metric small and explicit, and include the rejected response in the validation notes.
 
 ## Phase 4: Handoff
 
 Report:
 - created metric IDs and names
 - span/attribute/aggregation/unit for each
+- customer question and operational interpretation for each
 - evidence that each span/attribute existed before creation
 - run or conversation used to validate computation
+- any proof-only metrics that were intentionally not created or replaced
 - any recommended follow-up instrumentation

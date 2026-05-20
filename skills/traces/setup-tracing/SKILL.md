@@ -126,6 +126,18 @@ Implementation requirements:
 - Update deployment packaging. Dockerfiles, serverless bundles, Pipecat Cloud
   packages, and Fly/Render/Heroku deploys must include any new tracing helper
   module and dependency files.
+- When adding tool or workflow spans, include metric-ready numeric attributes
+  from the first implementation: `tool.latency_ms`, numeric `tool.error`,
+  numeric `tool.dependency_unavailable`, `tool.call.count`,
+  `tool.failure.count`, numeric `workflow.completed`, numeric
+  `workflow.dependency_blocked`, and numeric `workflow.fallback_used` when
+  available. These keep `configure-trace-metrics` from having to settle for
+  proof-only metrics.
+- For webhook-style voice agents, do not rely only on a final end-of-call event
+  if tool-call or turn webhooks already have the Coval target ID. Export the
+  per-event spans when the target ID is known, or buffer them until it is known,
+  then flush once. Avoid replaying spans after a successful export because Coval
+  trace ingest is append-only.
 
 For Python voice agents, an existing generated `coval_tracing.py` helper in the
 customer repo is an acceptable baseline, but improve it for the discovered
@@ -172,10 +184,16 @@ sit idle after launching one.
    - add bounded high-value attributes such as `metrics.ttfb`, token counts,
      finish reasons, tool names, safe tool argument summaries, status, and
      errors
+   - add customer-signal numeric attributes that can become metrics, such as
+     `tool.error`, `tool.latency_ms`, `tool.call.count`,
+     `workflow.dependency_blocked`, `workflow.completed`, and
+     `workflow.fallback_used`
    - improve flush/shutdown, buffering, batch size, retry, or deployment
      packaging issues found during implementation
    - prepare custom trace metric candidates from expected spans and any
-     historical Coval traces already available
+     historical Coval traces already available; treat generic duration or
+     span-count metrics as diagnostic proof unless they answer a customer
+     operating question
 4. Create custom trace metrics during the wait only when real trace data already
    proves the span name and metric attribute exist, either from historical
    traced runs or from the in-flight validation once spans appear in Trace
