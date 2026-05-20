@@ -55,6 +55,8 @@ Prioritize spans that make Coval trace UI, built-in trace metrics, and custom tr
 - `pipeline` or `transport`: only when they help diagnose routing/audio issues
 
 Keep span names stable and low-cardinality. Put IDs, provider names, endpoint names, and dynamic details in attributes.
+Match the public span naming convention before adding custom business spans:
+canonical names get semantic colors, labels, and built-in trace metric support.
 
 ## Phase 3: Add High-Value Attributes
 

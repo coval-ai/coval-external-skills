@@ -33,6 +33,9 @@ Units:
 - `tokens`
 - `score`
 
+If the desired display unit is not supported, omit `unit` and include the unit
+in the metric name, description, or attribute name.
+
 ## Metric Quality Bar
 
 Create metrics that a customer can use to operate the agent, not just prove
@@ -46,6 +49,13 @@ that tracing is wired. A useful metric answers one concrete question:
 Diagnostic-only metrics, such as generic call duration, root span count, or a
 temporary connectivity probe, are useful during setup but should not be the
 final custom metric set unless the customer explicitly asked for them.
+
+Not every useful customer metric needs traces. If the value can be computed
+from the transcript, simulation output, or conversation metadata without span
+data, prefer a standard Coval metric or evaluation metric. For example, "Turns
+Per Call" is usually a transcript/conversation aggregate, not a custom trace
+metric. "Cart Total" is a good trace metric when the agent exposes the numeric
+cart or order amount as a safe span attribute during checkout.
 
 When the API does not accept span-level `error_rate`, `success_rate`, `count`,
 `sum`, `p95`, or `p99`, use real numeric attributes with supported aggregations
@@ -91,6 +101,7 @@ adding instrumentation and have a validation run in progress to prove it.
 | Which downstream dependencies are slow? | Tool Latency P90 | `llm_tool_call` / `tool.latency_ms` / `p90` / `ms` | Record duration for each tool or external API call. |
 | Is the intended outcome happening? | Workflow Completion Rate | `conversation` / `workflow.completed` / `average` / `ratio` | Set `1` when the booking, reschedule, order, claim, handoff, or other target outcome completes; otherwise `0`. |
 | How often does the agent need backup behavior? | Fallback Rate | `conversation` / `workflow.fallback_used` / `average` / `ratio` | Set `1` when fallback, retry exhaustion, escalation, or transfer was needed; otherwise `0`. |
+| What is the value of completed carts or orders? | Cart Total Avg | `conversation` / `cart.total_amount` / `average` / unit omitted | Record a numeric amount on the root conversation or checkout span; include currency in the attribute name, metric name, or description when needed. |
 
 ## Vertical Templates
 
@@ -115,6 +126,7 @@ Healthcare intake:
 Restaurant orders:
 - menu lookup latency
 - cart update count
+- cart total average
 - payment or order submission error rate
 - substitution flow count
 
@@ -134,21 +146,22 @@ Sales:
 
 For each metric:
 1. Write the customer question the metric answers.
-2. Confirm the metric is not merely a proof-of-ingest metric.
-3. Confirm the span name exists in Trace Search or a trace dump.
-4. Confirm the attribute exists and is numeric for numeric aggregations.
-5. Pick the aggregation that matches the question:
+2. Confirm trace data is the right source for that question.
+3. Confirm the metric is not merely a proof-of-ingest metric.
+4. Confirm the span name exists in Trace Search or a trace dump.
+5. Confirm the attribute exists and is numeric for numeric aggregations.
+6. Pick the aggregation that matches the question:
    - p95/p99 for tail latency
    - average/median for typical behavior
    - sum for total tokens/cost/count-like values
    - count for occurrence rate
    - error_rate/success_rate for reliability
-6. Pick a short Title Case metric name.
-7. Create the metric with `METRIC_CUSTOM_TRACE`.
-8. Attach it to the agent or run.
-9. Run a small evaluation and verify it computes.
-10. Record the computed value and the operational interpretation.
-11. If the API rejects an aggregation that exists in current code, create a production-safe fallback metric only when it still answers a useful question.
+7. Pick a short Title Case metric name.
+8. Create the metric with `METRIC_CUSTOM_TRACE`.
+9. Attach it to the agent or run.
+10. Run a small evaluation and verify it computes.
+11. Record the computed value and the operational interpretation.
+12. If the API rejects an aggregation that exists in current code, create a production-safe fallback metric only when it still answers a useful question.
 
 ## Example API Payloads
 
@@ -200,5 +213,17 @@ Dependency blocked rate:
   "metric_attribute": "workflow.dependency_blocked",
   "aggregation_method": "average",
   "unit": "ratio"
+}
+```
+
+Cart total average:
+```json
+{
+  "metric_name": "Cart Total Avg",
+  "description": "Average numeric cart amount captured by the agent during checkout.",
+  "metric_type": "METRIC_CUSTOM_TRACE",
+  "span_name": "conversation",
+  "metric_attribute": "cart.total_amount",
+  "aggregation_method": "average"
 }
 ```

@@ -1,30 +1,55 @@
 # Coval Span Schema
 
-Use stable, Coval-recognized span names so the trace viewer, Trace Search, built-in trace metrics, and custom trace metrics work well.
+Use stable, Coval-recognized span names so the trace viewer, Trace Search,
+built-in trace metrics, and custom trace metrics work well. This mirrors the
+public Span Naming Conventions in the Coval OpenTelemetry docs.
 
 ## Canonical Spans
 
-| Span | Use | Recommended Attributes |
-|------|-----|------------------------|
-| `conversation` | Full call/session root | `call.duration_seconds`, safe `session.id`, safe `customer.workflow`, `tool.call.count`, `tool.failure.count`, `workflow.completed`, `workflow.dependency_blocked`, `workflow.fallback_used` |
-| `turn` | One user/assistant turn | turn index, safe turn classification |
-| `stt` | Final speech-to-text result | `transcript`, `metrics.ttfb`, `stt.confidence` |
-| `stt.provider.<name>` | STT provider attempt or fallback | `stt.providerName`, `metrics.ttfb`, `stt.confidence` |
-| `llm` | Model invocation | `metrics.ttfb`, `llm.finish_reason`, `gen_ai.usage.input_tokens`, `gen_ai.usage.output_tokens` |
-| `tts` | Text-to-speech invocation | `metrics.ttfb`, provider and voice metadata when safe |
-| `llm_tool_call` | Function/tool execution | `function.name`, `tool_call_id`, `function.arguments` when safe, `tool.latency_ms`, `tool.error`, `tool.dependency_unavailable`, `tool.result.count` |
-| `vad` | Voice activity detection | confidence, segment duration, state when useful |
-| `pipeline` | Agent pipeline wrapper | framework or stage metadata |
-| `transport` | Audio/network transport | provider, codec, connection mode, network errors |
+| Span | Use For | Required Attributes | Optional / Recommended Attributes | Compatibility Aliases |
+|------|---------|---------------------|-----------------------------------|-----------------------|
+| `llm` | LLM invocations | - | `metrics.ttfb`, `gen_ai.usage.input_tokens`, `gen_ai.usage.output_tokens`, `llm.finish_reason` | - |
+| `tts` | Text-to-speech | - | `metrics.ttfb` | - |
+| `stt` | Speech-to-text | `transcript` when using STT Word Error Rate or the Audio Upload variant | `metrics.ttfb`, `stt.confidence` | `stt.transcription` for older integrations |
+| `stt.provider.<name>` | Per-provider STT attempt, child of `stt` | - | `stt.providerName`, `stt.confidence`, `metrics.ttfb` | - |
+| `vad` | Voice activity detection | - | - | - |
+| `llm_tool_call` | Individual tool/function calls | - | `function.name`, `tool_call_id`, `function.arguments` | Span name `tool_call`; attributes `tool.name`, `tool.call_id`, `tool.arguments` |
+| `turn` | A single conversation turn | - | - | - |
+| `conversation` | Full conversation | - | - | - |
+| `pipeline` | Processing pipeline | - | - | - |
+| `transport` | Audio/network transport | - | - | - |
 
-Aliases accepted for compatibility:
-- `stt.transcription` for `transcript`
-- `tool_call` for `llm_tool_call`
-- `tool.name` for `function.name`
-- `tool.call_id` for `tool_call_id`
-- `tool.arguments` for `function.arguments`
+Any span name works and appears in Coval, but names outside this table get
+auto-assigned colors instead of semantic labels. Use `service.name` in the
+resource to group spans by service.
 
-New integrations should emit canonical names.
+New integrations should emit canonical names and attributes first. Add custom
+metric attributes to those spans where possible instead of inventing dynamic
+span names.
+
+## Metric-Ready Extensions
+
+Use these additive attributes when the agent exposes the data. They are not
+required for semantic UI colors, but they make custom trace metrics more useful.
+
+`conversation`:
+- `call.duration_seconds`
+- safe `session.id`
+- safe `customer.workflow`
+- `tool.call.count`
+- `tool.failure.count`
+- `workflow.completed`
+- `workflow.dependency_blocked`
+- `workflow.fallback_used`
+- `cart.total_amount` or `order.total_amount`
+
+`llm_tool_call`:
+- `tool.latency_ms`
+- `tool.error`
+- `tool.dependency_unavailable`
+- `tool.result.count`
+
+Use numeric `0`/`1` values for rate-style flags.
 
 ## Required For Built-In Value
 
@@ -71,6 +96,8 @@ Choose attributes that answer a debugging or measurement question:
 - `workflow.completed`
 - `workflow.dependency_blocked`
 - `workflow.fallback_used`
+- `cart.total_amount`
+- `order.total_amount`
 - `fallback.used`
 - `policy.blocked`
 - `appointment.lookup_latency_ms`

@@ -126,6 +126,10 @@ Implementation requirements:
 - Update deployment packaging. Dockerfiles, serverless bundles, Pipecat Cloud
   packages, and Fly/Render/Heroku deploys must include any new tracing helper
   module and dependency files.
+- Emit the canonical span names from `../references/span-schema.md` first:
+  `llm`, `tts`, `stt`, `stt.provider.<name>`, `vad`, `llm_tool_call`,
+  `turn`, `conversation`, `pipeline`, and `transport`. These names drive
+  semantic UI labels, colors, and built-in trace metrics.
 - When adding tool or workflow spans, include metric-ready numeric attributes
   from the first implementation: `tool.latency_ms`, numeric `tool.error`,
   numeric `tool.dependency_unavailable`, `tool.call.count`,

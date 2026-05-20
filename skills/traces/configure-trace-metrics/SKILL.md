@@ -17,6 +17,12 @@ diagnostic unless it answers a customer decision. Prefer metrics that expose a
 workflow bottleneck, user-impacting failure, dependency health issue, latency
 tail, cost driver, fallback, handoff, or completion signal.
 
+Use trace metrics only when trace spans are the right data source. Metrics like
+turns per call often belong in transcript, simulation-output, or evaluation
+metrics instead. Metrics like cart total, order total, provider fallback, tool
+failure, or downstream latency are good trace metrics when the agent emits the
+safe numeric value on a real span.
+
 ## Read First
 
 Load:
@@ -57,6 +63,7 @@ Use the playbook to propose a small set. Prefer 3-6 high-signal metrics over a l
 
 For each candidate, write the customer question it answers. Drop or label the
 metric as diagnostic-only if the question is only "did tracing work?"
+Also drop it if the same answer is better computed from non-trace Coval data.
 
 Baseline recommendations:
 - voice agents: LLM/TTS/STT TTFB, token usage, tool call count, STT WER when `stt` spans include `transcript`
@@ -67,8 +74,8 @@ Baseline recommendations:
 High-signal first set when the trace includes tool or workflow spans:
 - Dependency Blocked Rate: required external dependency prevented completion
 - Tool Failure Rate: tool/API calls returned errors or unusable responses
-- Tool Calls Per Conversation: workflow complexity and integration load
 - Tool Latency P90: slow downstream tools before they become call failures
+- Cart Total Avg or Order Total Avg: business value captured during checkout
 - Workflow Completion or Fallback Rate: whether the intended customer outcome happened
 
 Do not create a custom trace metric for an attribute that is not present in
