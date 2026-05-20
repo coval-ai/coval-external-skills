@@ -10,10 +10,10 @@ Set up tracing in the customer's agent with the smallest additive change that pr
 Operate from the customer's agent side. Do not assume access to Coval internal
 backend, frontend, docs, wizard, research, or example source repositories, and
 do not ask the customer for them. Use only the customer's repo, public Coval
-docs, the Coval CLI/API, and fetched public OpenAPI specs. Code edits belong in
-the customer's agent/service repo. Coval-side changes must be limited to
-documented configuration through the Coval CLI, public API, or dashboard, and
-should be explained before mutation.
+docs, public SDK examples, the Coval CLI/API, and fetched public OpenAPI specs.
+Code edits belong in the customer's agent/service repo. Coval-side changes must
+be limited to documented configuration through the Coval CLI, public API, or
+dashboard, and should be explained before mutation.
 
 ## Preflight
 
@@ -28,11 +28,14 @@ should be explained before mutation.
    ```bash
    curl -fsS https://api.coval.dev/v1/openapi
    ```
+   For broader docs discovery, fetch `https://docs.coval.dev/llms.txt` and then
+   the specific public docs page needed for the task.
 4. Stay inside the customer-owned code surface. Do not reference or require
    `coval-ai/backend`, `coval-ai/frontend`, `coval-ai/docs`,
-   `coval-ai/wizard`, internal engineering docs, or Coval example repos as
-   local source code. Public docs and installed skill reference files are the
-   support material available to the customer-side agent.
+   `coval-ai/wizard`, internal engineering docs, or private Coval repos as
+   local source code. Public docs, public SDK examples, and installed skill
+   reference files are the support material available to the customer-side
+   agent.
 5. Read the shared references before editing:
    - `../references/coval-tracing-reference.md`
    - `../references/agent-type-routing.md`

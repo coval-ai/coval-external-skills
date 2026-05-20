@@ -15,3 +15,7 @@ blocked rate, tool failure rate, tool latency, workflow completion, fallback,
 and per-conversation tool volume.
 
 The shared reference files in `./references/` are intentionally detailed. Skill entrypoints load only the references needed for the current task.
+
+For current platform behavior, trace setup should also consult the public Coval
+docs and SDK examples linked from
+[`references/coval-tracing-reference.md`](./references/coval-tracing-reference.md).
