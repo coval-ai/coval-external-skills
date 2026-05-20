@@ -41,6 +41,23 @@ Start from evidence, not assumptions.
 
 Do not add manual duplicate spans for operations already emitted by Pipecat, LiveKit, Vapi, or an existing OTel integration unless the existing span cannot be enriched.
 
+### Phase 1b: Discover Business Events Already In The Code
+
+Before deciding what to add, **grep the agent code for business-event surface
+area** the customer already implements but isn't tracing. Search for terms like
+`cart`, `order`, `intent`, `tool_call`, `function_call`, `handoff`, `escalat`,
+`payment`, `checkout`, `confirm`, `cancel`, `transfer`, `submit`, `dispatch`,
+`end_of_call`, `conversation_end`, `system_notify`, `webhook`, `event_name`.
+Each match is a candidate for a `business.<event>` span or `llm_tool_call` span
+with a numeric attribute that can later become a customer-signal metric.
+This is the most common missed coverage layer: the customer's protocol already
+defines meaningful business events that never make it into traces because the
+first pass only instrumented the audio/LLM pipeline.
+
+Propose one span per distinct business event with at least one numeric
+attribute (cart total, item count, payment amount, escalation level, etc.).
+Do not wait for the customer to ask "is that all?" before adding these.
+
 ## Phase 2: Add Coval-Native Span Coverage
 
 Prioritize spans that make Coval trace UI, built-in trace metrics, and custom trace metrics more useful:
@@ -57,6 +74,16 @@ Prioritize spans that make Coval trace UI, built-in trace metrics, and custom tr
 Keep span names stable and low-cardinality. Put IDs, provider names, endpoint names, and dynamic details in attributes.
 Match the public span naming convention before adding custom business spans:
 canonical names get semantic colors, labels, and built-in trace metric support.
+
+**Prefer OTel span events over new spans for moment-in-time annotations.**
+A span event (`span.add_event("simulation_id_received", {...})`) is a cheap
+timestamped marker on an existing span — it does not bloat the span count, does
+not affect trace metrics, and gives the trace viewer a visible flag on the
+parent timeline. Use events for milestones like `simulation_id_received`,
+`first_inbound_audio`, `first_speech_detected`, `cart_sent`, `tool_dispatched`,
+`websocket_disconnect`, and `conversation_end` on the `conversation` root or
+the relevant `turn`. Reserve full spans for things with non-trivial duration or
+parent/child structure.
 
 ## Phase 3: Add High-Value Attributes
 

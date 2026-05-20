@@ -83,6 +83,25 @@ actual trace data unless you are also adding that instrumentation and have a
 validation run in progress to prove it. In that case, stage the metric body and
 create it only after the span/attribute appears in Coval.
 
+**Auto-pair rule.** Every new numeric attribute added during
+`optimize-trace-observability` should be paired with at least one proposed
+metric *in the same pass*, not in a later round. Walk the new attribute set
+once:
+
+- `metrics.ttfb` on any provider span → P90 latency metric
+- `*.latency_ms` / `*.duration_s` → P90 latency metric
+- `*.count` / `*_count` / `*.bytes` → average per-call metric
+- `*.total` / `*.amount` / `*.value` (business numerics) → average business
+  metric (e.g., `cart.total`/average/score)
+- numeric `0`/`1` flags (`*.error`, `*.fallback_used`, `*.completed`,
+  `*.dependency_unavailable`) → average / ratio metric
+- `wait.*` / `*_to_first_*` → P90 time-to metric
+
+If the auto-pair would create a metric that does not answer a customer
+question, drop it explicitly and note why. Do not ship a trace enrichment pass
+without proposing the matching metrics — the customer should not have to ask
+"is that all the metrics?" twice.
+
 ## Phase 2: Validate Config Shape
 
 Coval custom trace metric fields:
