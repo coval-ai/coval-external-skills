@@ -1,5 +1,23 @@
 # Coval Tracing Reference
 
+## Evergreen Public References
+
+Prefer these public sources when the skill needs current API, SDK, or product
+behavior beyond the local agent repo:
+
+- Coval docs home: https://docs.coval.dev/getting-started/welcome
+- Documentation index for AI agents: https://docs.coval.dev/llms.txt
+- OpenTelemetry traces guide: https://docs.coval.dev/concepts/simulations/traces/opentelemetry
+- API reference: https://docs.coval.dev/api-reference
+- Python SDK examples: https://github.com/coval-ai/coval-examples/tree/main/python-sdk
+- TypeScript SDK examples: https://github.com/coval-ai/coval-examples/tree/main/typescript-sdk
+
+Use docs and SDK examples as current public reference material. Do not require
+local access to Coval internal repos, and do not copy example-agent source code
+into a customer repository. When implementation details differ between a skill
+reference and the public docs/API, fetch the current docs, OpenAPI spec, or SDK
+example and treat the live public source as authoritative.
+
 ## Ingestion
 
 - Endpoint: `https://api.coval.dev/v1/traces`

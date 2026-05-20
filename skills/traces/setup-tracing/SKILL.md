@@ -10,10 +10,10 @@ Set up tracing in the customer's agent with the smallest additive change that pr
 Operate from the customer's agent side. Do not assume access to Coval internal
 backend, frontend, docs, wizard, research, or example source repositories, and
 do not ask the customer for them. Use only the customer's repo, public Coval
-docs, the Coval CLI/API, and fetched public OpenAPI specs. Code edits belong in
-the customer's agent/service repo. Coval-side changes must be limited to
-documented configuration through the Coval CLI, public API, or dashboard, and
-should be explained before mutation.
+docs, public SDK examples, the Coval CLI/API, and fetched public OpenAPI specs.
+Code edits belong in the customer's agent/service repo. Coval-side changes must
+be limited to documented configuration through the Coval CLI, public API, or
+dashboard, and should be explained before mutation.
 
 ## Preflight
 
@@ -28,11 +28,14 @@ should be explained before mutation.
    ```bash
    curl -fsS https://api.coval.dev/v1/openapi
    ```
+   For broader docs discovery, fetch `https://docs.coval.dev/llms.txt` and then
+   the specific public docs page needed for the task.
 4. Stay inside the customer-owned code surface. Do not reference or require
    `coval-ai/backend`, `coval-ai/frontend`, `coval-ai/docs`,
-   `coval-ai/wizard`, internal engineering docs, or Coval example repos as
-   local source code. Public docs and installed skill reference files are the
-   support material available to the customer-side agent.
+   `coval-ai/wizard`, internal engineering docs, or private Coval repos as
+   local source code. Public docs, public SDK examples, and installed skill
+   reference files are the support material available to the customer-side
+   agent.
 5. Read the shared references before editing:
    - `../references/coval-tracing-reference.md`
    - `../references/agent-type-routing.md`
@@ -90,6 +93,16 @@ question. Use this decision order:
    route. In that case, give one recommendation first, explain why, and ask for
    the smallest approval needed.
 
+Coval-side config changes that are **purely additive** to a documented field
+that is currently empty (e.g., setting `initialization_json` from `"{}"` to the
+documented `{"simulation_id":"{{simulation_id}}"}` placeholder, or filling an
+empty `pre_call_webhook_url`) do not need a consent prompt — the customer's
+"get traces working" intent implies it, and the change is trivially reversible
+via the same PATCH. Show the before/after value in the handoff but proceed
+without asking. Always ask before changes that delete config, downgrade auth,
+overwrite a non-empty field, or modify shared resources like phone numbers,
+SIP routes, test sets, or webhook secrets.
+
 Choose the route from `../references/agent-type-routing.md`:
 - SIP inbound voice: extract `X-Coval-Simulation-Id` from SIP headers or framework participant attributes.
 - PSTN inbound phone: do not expect SIP headers. Add or configure `pre_call_webhook_url` / registration-webhook correlation, or guide the customer to provision a SIP address.
@@ -126,6 +139,22 @@ Implementation requirements:
 - Update deployment packaging. Dockerfiles, serverless bundles, Pipecat Cloud
   packages, and Fly/Render/Heroku deploys must include any new tracing helper
   module and dependency files.
+- Emit the canonical span names from `../references/span-schema.md` first:
+  `llm`, `tts`, `stt`, `stt.provider.<name>`, `vad`, `llm_tool_call`,
+  `turn`, `conversation`, `pipeline`, and `transport`. These names drive
+  semantic UI labels, colors, and built-in trace metrics.
+- When adding tool or workflow spans, include metric-ready numeric attributes
+  from the first implementation: `tool.latency_ms`, numeric `tool.error`,
+  numeric `tool.dependency_unavailable`, `tool.call.count`,
+  `tool.failure.count`, numeric `workflow.completed`, numeric
+  `workflow.dependency_blocked`, and numeric `workflow.fallback_used` when
+  available. These keep `configure-trace-metrics` from having to settle for
+  proof-only metrics.
+- For webhook-style voice agents, do not rely only on a final end-of-call event
+  if tool-call or turn webhooks already have the Coval target ID. Export the
+  per-event spans when the target ID is known, or buffer them until it is known,
+  then flush once. Avoid replaying spans after a successful export because Coval
+  trace ingest is append-only.
 
 For Python voice agents, an existing generated `coval_tracing.py` helper in the
 customer repo is an acceptable baseline, but improve it for the discovered
@@ -141,6 +170,22 @@ The first working trace should contain:
 - Coval-compatible target ID routing
 
 If the app cannot expose STT/TTS/LLM internals yet, ship the minimum useful trace first, then use `optimize-trace-observability` for enrichment.
+
+**Anti-pattern: per-chunk or per-frame transport spans.** Voice/realtime agents
+stream audio in many small chunks (often 20-100 ms). Emitting one OTel span per
+chunk produces hundreds of micro-spans that visually drown the trace viewer and
+collapse the real `turn`/`tts`/`llm` spans into invisible slivers — the trace
+will *look* empty even when it is not. Aggregate per-chunk activity into
+counter attributes on the parent stream span instead:
+
+- `audio.chunks_sent` (count) and `audio.chunk_target_ms` (configured cadence)
+  on the `tts` span
+- `audio.chunks_received` on the `turn` or `stt` span
+- `audio.payload_bytes`, `audio.duration_s` already capture the totals
+
+The same rule applies to per-frame `transport.recv_audio`, per-event WebSocket
+pings, and per-token streaming spans. One span per high-level operation; per-
+chunk detail goes into numeric attributes.
 
 ## Phase 5: Verification
 
@@ -172,10 +217,16 @@ sit idle after launching one.
    - add bounded high-value attributes such as `metrics.ttfb`, token counts,
      finish reasons, tool names, safe tool argument summaries, status, and
      errors
+   - add customer-signal numeric attributes that can become metrics, such as
+     `tool.error`, `tool.latency_ms`, `tool.call.count`,
+     `workflow.dependency_blocked`, `workflow.completed`, and
+     `workflow.fallback_used`
    - improve flush/shutdown, buffering, batch size, retry, or deployment
      packaging issues found during implementation
    - prepare custom trace metric candidates from expected spans and any
-     historical Coval traces already available
+     historical Coval traces already available; treat generic duration or
+     span-count metrics as diagnostic proof unless they answer a customer
+     operating question
 4. Create custom trace metrics during the wait only when real trace data already
    proves the span name and metric attribute exist, either from historical
    traced runs or from the in-flight validation once spans appear in Trace
@@ -190,9 +241,23 @@ sit idle after launching one.
 7. Inspect the trace for expected spans and attributes. If it is missing, sparse,
    duplicated, or attached to the wrong result, stop further metric creation and
    apply `debug-traces` before continuing.
-8. After the initial trace is confirmed, finish any prepared metric creation and
-   run one follow-up calculation/preview/attached-run check through the CLI/API
-   when the public API supports it.
+8. **Trace density self-check.** Before declaring success, count spans by name.
+   If a single span name is more than ~70% of total spans and those spans are
+   each shorter than ~50 ms, that name is almost certainly per-chunk/per-frame
+   noise. Collapse it into a counter attribute on the parent span and redeploy
+   *before* opening the result for the customer — the trace viewer will look
+   empty otherwise. Do not rely on the customer to flag visual noise.
+9. **Verify correlation activation from the exporter, not from pre-existing
+   agent counters.** Pre-existing counters like a `non_audio_messages` or
+   `non_setup_frames` tally on the agent often increment *after* the
+   setup/init branch returns, so they read `0` even when correlation worked.
+   The authoritative signal that the simulation ID reached the exporter is
+   the OTel logger line (`activated OTLP export simulation_id=<id>`) or the
+   batch processor's accepted-batch log. Check those first; only chase
+   counters if the exporter never activated.
+10. After the initial trace is confirmed, finish any prepared metric creation
+    and run one follow-up calculation/preview/attached-run check through the
+    CLI/API when the public API supports it.
 
 For WebSocket agents, make the smoke interaction long enough to trigger the
 agent's response threshold. A client that sends too little audio, or an agent
