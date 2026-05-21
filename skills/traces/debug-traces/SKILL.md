@@ -81,6 +81,17 @@ High-probability causes:
   reports them as measured provider latency
 - tracing helper files or OpenTelemetry dependencies were added locally but not copied into the deployed image/bundle
 - WebSocket smoke tests sent less audio than the agent's response threshold, or the agent streamed a long canned response after Coval closed the socket
+- run progress reached `completed_test_cases == total_test_cases`, but run
+  status is still non-terminal and metric outputs are still queueing
+- older runs reflect stale metric definitions and are being treated as proof of
+  current instrumentation state
+
+For Vapi-hosted PSTN agents, inspect the source of each span before calling it
+real provider observability. `tool-calls` webhooks are real tool execution.
+`end-of-call-report.artifact.messages` are real transcript/turn evidence.
+Provider-internal STT/LLM/TTS timing is not real unless the span has measured
+provider timing or explicit provider fields rather than
+`trace.timing=metadata_marker`.
 
 For Vapi-hosted PSTN agents, inspect the source of each span before calling it
 real provider observability. `tool-calls` webhooks are real tool execution.
@@ -103,6 +114,12 @@ Trace Search filters that usually isolate issues:
 - duration greater than expected thresholds
 - attribute exists: `metrics.ttfb`, `stt.providerName`, `function.name`, `llm.finish_reason`
 - agent/test set scope
+
+For metric debugging, use the simulation metrics API/CLI output in addition to
+the run summary:
+- run may still show `IN PROGRESS` while metrics are computing
+- each metric output should become terminal (`COMPLETED` or `FAILED`)
+- treat `IN QUEUE` / `IN PROGRESS` metric outputs as pending, not failed
 
 ## Phase 5: Fix Or Escalate
 

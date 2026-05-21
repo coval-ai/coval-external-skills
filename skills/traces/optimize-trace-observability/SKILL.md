@@ -34,6 +34,8 @@ Start from evidence, not assumptions.
 4. Classify the current trace:
    - no trace
    - trace exists but only root/provider spans
+   - one span type dominates (for example, nearly all rows are `conversation`),
+     which usually means child spans were not emitted or were named too broadly
    - STT/LLM/TTS spans exist but lack attributes
    - tool spans missing
    - parent/child structure is flat or misleading

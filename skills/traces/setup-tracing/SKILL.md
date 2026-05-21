@@ -50,6 +50,9 @@ Identify:
 - language and package manager
 - app start command and one representative local invocation
 - agent framework or provider stack: Pipecat, LiveKit, Vapi, Twilio, WebSocket, direct OpenAI/Anthropic, custom loop, etc.
+- nearby same-stack agent implementations (if available in the same workspace)
+  that already emit richer traces; use them as additive instrumentation
+  references instead of reinventing span structure
 - Coval agent type and connection path: SIP inbound, PSTN inbound, outbound voice, WebSocket voice/chat, or conversation monitoring
 - where a per-call Coval ID can enter the agent process
 - existing telemetry owner: OpenTelemetry, Sentry, Datadog, Honeycomb, Langfuse, Arize, LangSmith, Traceloop, or custom OTLP exporter
@@ -272,6 +275,16 @@ sit idle after launching one.
 10. After the initial trace is confirmed, finish any prepared metric creation
     and run one follow-up calculation/preview/attached-run check through the
     CLI/API when the public API supports it.
+11. If you changed metric definitions or attached new metrics, run a post-change
+    validation and poll until the run status is terminal (`COMPLETED`, `FAILED`,
+    or `CANCELLED`) and each newly attached trace metric has a terminal output
+    on the simulation (`COMPLETED` or `FAILED`). Do not stop while outputs are
+    still `IN QUEUE` / `IN PROGRESS`, even when `progress.completed_test_cases`
+    already equals `total_test_cases`.
+12. When prior runs show `FAILED` trace metrics, verify against the first run
+    launched after your instrumentation and metric changes instead of treating
+    older runs as current-state proof. Metric failures on older runs may reflect
+    stale definitions that no longer match the latest instrumentation.
 
 For WebSocket agents, make the smoke interaction long enough to trigger the
 agent's response threshold. A client that sends too little audio, or an agent
@@ -296,5 +309,10 @@ End with:
 - how the customer sets required env vars
 - commands run, including the Coval launch and polling commands/API endpoints
 - Coval trace URL or simulation/conversation ID used for proof
+- direct Coval URLs for:
+  - runs list (`https://app.coval.dev/<org-slug>/runs?sort=createdAt%3Adescending`)
+  - run details (`https://app.coval.dev/<org-slug>/runs/<run-id>`)
+  - run result (`https://app.coval.dev/<org-slug>/runs/<run-id>/results/<simulation-output-id>`)
+  - trace viewer (`https://app.coval.dev/<org-slug>/runs/<run-id>/results/<simulation-output-id>/traces`)
 - custom trace metrics created, staged, or deferred and why
 - any remaining gaps to handle with `optimize-trace-observability`, `configure-trace-metrics`, or `debug-traces`

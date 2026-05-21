@@ -36,7 +36,7 @@ provider-internal Deepgram/OpenAI/TTS span boundaries. Do not invent STT, LLM,
 or TTS latency from a transcript message duration.
 
 Good pattern:
-- emit a `turn` span using the Vapi message window
+- emit `turn.user` and `turn.assistant` spans using Vapi message windows
 - optionally emit tiny provider marker spans named `stt`, `llm`, and `tts` only
   when the trace viewer needs semantic labels, and mark them clearly:
   - `trace.source=vapi_artifact`
@@ -58,6 +58,14 @@ Bad pattern:
 - setting fake `stt.confidence`, fake TTFB, or hard-coded provider success
   values just to make the trace look rich
 
+## Timestamp Guardrails
+
+When reconstructing spans from `artifact.messages`:
+- parse `time` and `endTime` carefully (these can appear in different units)
+- treat `secondsFromStart` as relative when `time` is absent
+- clamp invalid windows so `end > start`
+- bound marker spans to tiny windows to avoid int64 overflows or giant spans
+
 ## Correlation Pattern For PSTN
 
 If no verified Coval pre-call webhook field is available, use a self-contained
@@ -74,6 +82,9 @@ registration path for validation:
    clears the queue.
 4. Lazily create a per-call trace state on the first useful Vapi webhook
    (`tool-calls`, `conversation-update`, `status-update`, or
+   `end-of-call-report`). For inbound PSTN, `assistant-request` typically does
+   not arrive at the customer server when Coval uses `vapi_assistant_id`
+   directly — do not depend on it for session creation.
    `end-of-call-report`). For inbound PSTN, `assistant-request` typically does
    not arrive at the customer server when Coval uses `vapi_assistant_id`
    directly — do not depend on it for session creation.
@@ -121,7 +132,6 @@ t_end = (t_end_raw if t_end_raw is not None and t_end_raw <= 7200
 start_ns = int((call_start_epoch_s + t_start) * 1_000_000_000)
 end_ns   = int((call_start_epoch_s + t_end)   * 1_000_000_000)
 ```
-
 ## Span Shape
 
 Recommended Vapi PSTN trace:

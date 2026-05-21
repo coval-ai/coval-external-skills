@@ -116,7 +116,6 @@ APIs. If the agent currently uses stubs, note this and defer those metrics to
 when real handlers are wired. Creating them against stubs is worse than
 omitting them: they produce false confidence (latency always excellent, error
 rate always zero) that masks real production behavior.
-
 Do not create latency custom trace metrics from artifact-derived marker spans.
 For Vapi-hosted agents, `stt`/`llm`/`tts` spans that carry
 `trace.timing=metadata_marker` are not measured provider latency. Use real
@@ -219,14 +218,19 @@ After creating metrics:
    in-flight validation run already includes the newly attached metric.
 3. Poll the run through the CLI/API until it finishes. While waiting, inspect
    trace quality or prepare the handoff instead of blocking.
-4. Confirm the metric computes and does not error with "No spans named..." or "metric_attribute is required".
-5. Confirm trace-aware LLM judges run with trace context by launching a
+4. Confirm each newly attached trace metric reaches a terminal status on the
+   validation simulation (`COMPLETED` or `FAILED`). Do not stop while outputs
+   are still `IN QUEUE` or `IN PROGRESS`.
+5. Confirm the metric computes and does not error with "No spans named..." or "metric_attribute is required".
+6. Confirm trace-aware LLM judges run with trace context by launching a
    validation run that includes those metrics after traces are exported.
-6. Confirm the computed value is interpretable for the customer question. If it
+7. Confirm the computed value is interpretable for the customer question. If it
    computes but is only a tracing proof, mark it diagnostic and replace it with
    a higher-signal metric before handoff.
-7. If a metric errors because data is missing, fix the instrumentation rather than changing the metric to measure a less useful signal.
-8. If the creation API rejects a valid-in-code aggregation, keep the validated fallback metric small and explicit, and include the rejected response in the validation notes.
+8. If a metric errors because data is missing, fix the instrumentation rather than changing the metric to measure a less useful signal.
+9. If prior runs show metric failures, verify against the first run launched
+   after your metric/instrumentation updates before declaring the metric broken.
+10. If the creation API rejects a valid-in-code aggregation, keep the validated fallback metric small and explicit, and include the rejected response in the validation notes.
 
 ## Phase 4: Handoff
 
@@ -237,5 +241,6 @@ Report:
 - customer question and operational interpretation for each
 - evidence that each span/attribute existed before creation
 - run or conversation used to validate computation
+- direct Coval URLs for runs list, run detail, run result, and trace viewer
 - any proof-only metrics that were intentionally not created or replaced
 - any recommended follow-up instrumentation

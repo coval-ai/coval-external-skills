@@ -17,9 +17,12 @@ Use the first matching symptom, then verify the fix with a real Coval run or con
 | 503 | Temporary routing/storage unavailable | Response status | Retry with backoff |
 | No OTel card | No spans for that simulation output, wrong route, or export after user checked | Trace Search by simulation output ID | Fix ID routing and rerun |
 | Trace exists but is sparse | Only provider auto-instrumentation or root span exists | Inspect span names | Run `optimize-trace-observability` |
+| Trace rows are mostly `conversation` | Child spans were not emitted, span names are too broad, or only root-level events are instrumented | Inspect span-name distribution and parent/child tree | Add role-specific turn/tool/provider spans and bounded attributes |
 | Duplicated spans | Successful batch resent | Compare identical span IDs/timestamps | Retry failed batches only; dedupe only in future exports |
 | Custom trace metric says no spans | Span name mismatch or no traces in that simulation | Trace Search exact span name | Use emitted span name or fix instrumentation |
 | Metric attribute missing | Attribute absent or non-numeric | Inspect trace detail | Emit numeric attr or choose span-level aggregation |
+| Metric outputs stuck `IN QUEUE` while run still `IN PROGRESS` | Simulation finished but metric workers still computing | Poll run status and simulation metrics status | Wait for terminal run status and terminal metric outputs before concluding |
+| Metric fails on old run but passes on new run | Metric definition or instrumentation changed after older run | Compare run create times and metric update time | Validate against first post-change run; treat older failures as stale evidence |
 | Custom trace metric create rejects aggregation | Target API validation differs from docs or desired metric shape | Read response details and OpenAPI | Use accepted numeric fallback; document drift |
 | PSTN inbound missing IDs | Expected SIP header on phone network | Inspect provider setup event | Use SIP or pre-call registration webhook |
 | WebSocket missing IDs | Initialization/setup payload omitted simulation ID | Inspect first frame/setup request | Add simulation output ID to initialization JSON |
