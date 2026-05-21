@@ -50,6 +50,9 @@ Identify:
 - language and package manager
 - app start command and one representative local invocation
 - agent framework or provider stack: Pipecat, LiveKit, Vapi, Twilio, WebSocket, direct OpenAI/Anthropic, custom loop, etc.
+- nearby same-stack agent implementations (if available in the same workspace)
+  that already emit richer traces; use them as additive instrumentation
+  references instead of reinventing span structure
 - Coval agent type and connection path: SIP inbound, PSTN inbound, outbound voice, WebSocket voice/chat, or conversation monitoring
 - where a per-call Coval ID can enter the agent process
 - existing telemetry owner: OpenTelemetry, Sentry, Datadog, Honeycomb, Langfuse, Arize, LangSmith, Traceloop, or custom OTLP exporter
