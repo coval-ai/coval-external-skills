@@ -40,6 +40,7 @@ dashboard, and should be explained before mutation.
    - `../references/coval-tracing-reference.md`
    - `../references/agent-type-routing.md`
    - `../references/span-schema.md`
+   - if the agent is Vapi-based, `../references/vapi-artifact-tracing.md`
 
 ## Phase 1: Read-Only Analysis
 
@@ -155,6 +156,13 @@ Implementation requirements:
   per-event spans when the target ID is known, or buffer them until it is known,
   then flush once. Avoid replaying spans after a successful export because Coval
   trace ingest is append-only.
+- For Vapi-hosted PSTN agents, parse `end-of-call-report.artifact.messages`
+  after basic tool-call tracing works. Use Vapi message windows for `turn`
+  spans, but do not fabricate provider latency. If you emit `stt`, `llm`, or
+  `tts` spans from artifact messages, mark them as metadata markers with
+  `trace.source=vapi_artifact`, `trace.timing=metadata_marker`, and a
+  `trace.duration_note`; alternatively use marker-suffixed span names. Do not
+  create LLM/STT/TTS latency metrics from these marker spans.
 
 For Python voice agents, an existing generated `coval_tracing.py` helper in the
 customer repo is an acceptable baseline, but improve it for the discovered
@@ -227,12 +235,18 @@ sit idle after launching one.
      historical Coval traces already available; treat generic duration or
      span-count metrics as diagnostic proof unless they answer a customer
      operating question
+   - prepare trace-aware LLM judge metric candidates with `include_traces=true`
+     when trace context is needed to grade ordering, tool-output grounding,
+     verification before tool use, or recovery from tool errors
 4. Create custom trace metrics during the wait only when real trace data already
    proves the span name and metric attribute exist, either from historical
    traced runs or from the in-flight validation once spans appear in Trace
    Search. If this validation is the first trace for the agent, stage the metric
    definitions while waiting and create them immediately after the run produces
    confirmed spans.
+   Create trace-aware LLM judge metrics before the follow-up validation run when
+   the Metrics OpenAPI supports `include_traces` and their prompts depend on
+   trace context that the first trace already proved exists.
 5. When the run finishes, confirm the agent export returned 200 or that the
    exporter logged a successful accepted batch. A 404 from the standalone test
    script only proves auth/connectivity, not lifecycle wiring.

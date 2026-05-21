@@ -12,7 +12,8 @@ Skills for configuring, improving, measuring, and debugging Coval OpenTelemetry 
 Trace metric work should finish with customer-signal metrics, not only
 proof-of-ingest metrics. The metrics playbook includes recipes for dependency
 blocked rate, tool failure rate, tool latency, workflow completion, fallback,
-and per-conversation tool volume.
+per-conversation tool volume, and trace-aware LLM judge metrics with
+`include_traces=true`.
 
 The shared reference files in `./references/` are intentionally detailed. Skill entrypoints load only the references needed for the current task.
 

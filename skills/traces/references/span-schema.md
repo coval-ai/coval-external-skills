@@ -61,6 +61,12 @@ Use numeric `0`/`1` values for rate-style flags.
 - Rate-style custom trace metrics should use numeric `0`/`1` attributes when
   the target API requires a `metric_attribute`.
 
+For hosted voice providers such as Vapi, artifact-derived `stt`, `llm`, or
+`tts` spans may be metadata markers rather than measured provider operations.
+If so, set `trace.source` and `trace.timing=metadata_marker`, add a
+`trace.duration_note`, and do not use those spans for provider latency metrics.
+Use real provider spans or explicit provider timing fields for TTFB metrics.
+
 ## Status And Errors
 
 Set the span status to `ERROR` for failed tool calls, provider attempts, API calls, timeouts, and guardrail failures. Put a bounded message in the status description or safe attributes such as:
@@ -114,6 +120,8 @@ Avoid:
 - timestamps as attributes when span timing already captures time
 - duplicate manual spans when framework spans already exist and can be enriched
 - resending successful batches
+- full-duration STT/LLM/TTS spans inferred from transcript turns when provider
+  timing is not exposed
 
 Prefer bounded summaries:
 - message counts instead of full prompts
