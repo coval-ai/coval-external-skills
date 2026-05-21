@@ -75,6 +75,10 @@ Voice agents:
 - Tool failure rate: `llm_tool_call` / `tool.error` / `average` / `ratio`
 - Dependency blocked rate: `conversation` / `workflow.dependency_blocked` / `average` / `ratio`
 - Tool latency P90: `llm_tool_call` / `tool.latency_ms` / `p90` / `ms`
+- Workflow completion rate: `conversation` / `workflow.completed` / `average` / `ratio`
+- Fallback used rate: `conversation` / `workflow.fallback_used` / `average` / `ratio`
+- One vertical-specific failure-mode metric, such as
+  `conversation` / `roadside.dispatch.latency_ms` / `p90` / `ms`
 
 Only create LLM/TTS/STT latency metrics when those spans contain measured
 provider timing. For Vapi artifact-derived marker spans, use tool/workflow
@@ -106,6 +110,25 @@ adding instrumentation and have a validation run in progress to prove it.
 | Is the intended outcome happening? | Workflow Completion Rate | `conversation` / `workflow.completed` / `average` / `ratio` | Set `1` when the booking, reschedule, order, claim, handoff, or other target outcome completes; otherwise `0`. |
 | How often does the agent need backup behavior? | Fallback Rate | `conversation` / `workflow.fallback_used` / `average` / `ratio` | Set `1` when fallback, retry exhaustion, escalation, or transfer was needed; otherwise `0`. |
 | What is the value of completed carts or orders? | Cart Total Avg | `conversation` / `cart.total_amount` / `average` / unit omitted | Record a numeric amount on the root conversation or checkout span; include currency in the attribute name, metric name, or description when needed. |
+| Is the known business-critical dependency causing the demo/customer failure mode? | Vertical Dependency Latency P90 | `conversation` / `<domain>.<dependency>.latency_ms` / `p90` / `ms` | Copy the latency from the specific tool/workflow span onto the root or a canonical span with a low-cardinality attribute, e.g. `roadside.dispatch.latency_ms`. |
+
+## First-Pass Metric Floor
+
+When the trace already emits tool and root workflow attributes, do not stop at
+three or four proof metrics. Create or stage this minimum set before handoff:
+
+1. One vertical-specific metric for the customer's most important failure mode.
+2. Workflow Completion Rate.
+3. Workflow Blocked Rate or Dependency Blocked Rate.
+4. Tool Latency P90.
+5. Tool Failure Rate.
+6. Fallback Used Rate when fallback/retry/escalation is visible.
+7. Tool Calls Per Conversation when tool complexity is part of the workflow.
+
+If any item cannot be created, say why in concrete terms: missing span,
+missing numeric attribute, stub-only tool handler, rejected API field, or no
+representative run yet. Do not replace a missing vertical metric with a generic
+span-count metric.
 
 ## Trace-Aware LLM Judge Recipes
 
@@ -180,6 +203,13 @@ Sales:
 - qualification step count
 - quote tool error rate
 - handoff-to-human count
+
+Insurance:
+- roadside dispatch latency P90
+- FNOL field capture count
+- fraud pattern detected rate
+- roadside dependency blocked rate
+- callback or fallback offered rate
 
 ## Creation Checklist
 

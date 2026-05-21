@@ -66,7 +66,12 @@ first pass only instrumented the audio/LLM pipeline.
 
 Propose one span per distinct business event with at least one numeric
 attribute (cart total, item count, payment amount, escalation level, etc.).
-Do not wait for the customer to ask "is that all?" before adding these.
+Also identify the single most important vertical-specific failure mode and add
+a metric-ready root attribute for it, for example
+`roadside.dispatch.latency_ms`, `reservation.date.changed`,
+`identity.verification.completed`, `payment_plan.blocked`, or
+`handoff.required`. Do not wait for the customer to ask "is that all?" before
+adding these.
 
 ## Phase 2: Add Coval-Native Span Coverage
 
@@ -121,6 +126,14 @@ Minimum valuable set:
 - `tts`: `metrics.ttfb`, provider/voice metadata when safe
 - `llm_tool_call`: `function.name`, `tool_call_id`, `function.arguments` if safe and bounded, `tool.latency_ms`, numeric `tool.error`, numeric `tool.dependency_unavailable`, `tool.result.count` when applicable
 - `conversation`: `tool.call.count`, `tool.failure.count`, numeric `workflow.completed`, numeric `workflow.dependency_blocked`, numeric `workflow.fallback_used` when the session boundary is available
+- vertical-specific root attributes: one or two numeric signals that describe
+  the customer's main workflow risk, such as `roadside.dispatch.latency_ms`,
+  `roadside.dispatch.slow`, `fnol.fields_captured.count`,
+  `fraud.pattern_detected`, `reservation.date.changed`,
+  `identity.verification.completed`, or `payment_plan.blocked`
+- conversation aggregates when safely available: `call.cost_usd`,
+  `conversation.summary.length_chars`, `transcript.length_chars`,
+  `transcript.turn.count`, and per-role turn counts
 - custom spans: one numerical attribute that can become a custom trace metric, such as `duration_ms`, `retry_count`, `confidence_score`, `queue_wait_ms`, or `external_api_latency_ms`
 
 Set OTel status to `ERROR` on failing provider/tool/API spans. Coval custom trace metrics can calculate `error_rate` and `success_rate` from span status.

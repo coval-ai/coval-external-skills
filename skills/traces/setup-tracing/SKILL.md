@@ -128,15 +128,29 @@ hardcoding either name.
 
 ## Phase 3: Implement Additive Instrumentation
 
-Prefer an existing telemetry owner. If the app already has a `TracerProvider`, add a Coval exporter/processor to it instead of replacing the provider. If there is no telemetry setup, create one central module such as `coval_tracing.py`, `covalTracing.ts`, or `coval_tracing.go`.
+Prefer an existing telemetry owner. If the app already has a `TracerProvider`,
+add a Coval exporter/processor to it instead of replacing the provider. If
+there is no telemetry setup, create one central module such as
+`coval_tracing.py`, `covalTracing.ts`, or `coval_tracing.go` and keep the agent
+entry point focused on business/webhook routing. Do not leave the final
+implementation as a large inline tracing block inside `server.py`, `app.ts`, or
+the main webhook handler unless the repo is a tiny single-file prototype.
 
 Implementation requirements:
 - Endpoint: `https://api.coval.dev/v1/traces`
 - Auth header: `x-api-key` or `X-API-Key` from an environment variable, never a literal secret
 - Timeout: 30 seconds
-- Resource: set `service.name` to the agent or service name
+- Resource: set `service.name` to the agent or service name. Also add stable
+  customer-visible resource attributes when known: `service.namespace`,
+  `agent.name`, `agent.provider`, `coval.agent_type`, and
+  `coval.correlation.method`.
 - Export one target header only: `X-Simulation-Id` or `X-Conversation-Id`
 - Buffer spans only when the Coval ID is not yet available; bound the buffer
+- Use the standard OpenTelemetry SDK where available. For call flows where the
+  Coval target ID arrives after spans start, use an SDK-backed buffer such as
+  `InMemorySpanExporter`, then export the finished spans with an
+  `OTLPSpanExporter` after the ID is known. Avoid hand-rolled OTLP JSON
+  exporters unless the language/runtime has no usable SDK.
 - Use `BatchSpanProcessor` or equivalent for high-volume agents and keep batches comfortably below 3-4 MB
 - Flush/shutdown tracing before short-lived processes exit
 - Retry only failed batches; Coval stores spans append-only and does not deduplicate successful retries
@@ -154,6 +168,17 @@ Implementation requirements:
   `workflow.dependency_blocked`, and numeric `workflow.fallback_used` when
   available. These keep `configure-trace-metrics` from having to settle for
   proof-only metrics.
+- Add one vertical-specific workflow span or root attribute for the customer's
+  most important failure mode during the first pass. Examples:
+  `roadside.dispatch.latency_ms`, `reservation.date.changed`,
+  `identity.verification.completed`, `payment_plan.blocked`, or
+  `handoff.required`. Generic tool metrics are not enough when the repo clearly
+  exposes a business-critical path.
+- Emit OTel span events on the conversation root for moment-in-time business
+  milestones such as `simulation_id_received`, `dispatch_called`,
+  `delay_acknowledged`, `callback_offered`, `fnol_started`, `fnol_completed`,
+  `booking_attempted`, or `escalation_triggered`. Use events for timeline dots;
+  use spans for work with duration.
 - For webhook-style voice agents, do not rely only on a final end-of-call event
   if tool-call or turn webhooks already have the Coval target ID. Export the
   per-event spans when the target ID is known, or buffer them until it is known,
@@ -221,6 +246,12 @@ sit idle after launching one.
 2. Start a bounded poll loop through the CLI/API. Record the command or endpoint
    used, poll interval, and timeout. Do not print API keys or raw provider
    metadata from Coval agent responses.
+   For simulations, do not wait only for `GET /v1/runs/{run_id}` to expose
+   `results.output_ids`; that can lag until completion, which is too late for
+   PSTN/webhook registration. Also poll:
+   `GET /v1/simulations?filter=run_id%3D%22<RUN_ID>%22`, register the first
+   returned `simulation_id` / simulation output ID immediately, then continue
+   watching the run.
 3. While the run is pending, continue with non-blocking trace improvement:
    - add safe span enrichment visible from the code path, such as stable
      `conversation`, `turn`, `stt`, `llm`, `tts`, `llm_tool_call`,

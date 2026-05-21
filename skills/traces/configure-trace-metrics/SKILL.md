@@ -81,6 +81,10 @@ Baseline recommendations:
 - custom business logic: one metric for the most important customer-specific workflow bottleneck or failure mode
 
 High-signal first set when the trace includes tool or workflow spans:
+- One vertical-specific failure-mode metric tied to the customer's domain
+  workflow, such as Roadside Dispatch Latency P90, Reservation Date
+  Corruption Rate, Payment Plan Blocked Rate, Identity Verification Completion
+  Rate, or Escalation Triggered Rate
 - Dependency Blocked Rate: required external dependency prevented completion
 - Tool Failure Rate: tool/API calls returned errors or unusable responses
 - Tool Latency P90: slow downstream tools before they become call failures
@@ -140,6 +144,12 @@ question, drop it explicitly and note why. Do not ship a trace enrichment pass
 without proposing the matching metrics — the customer should not have to ask
 "is that all the metrics?" twice.
 
+First-pass floor: if real spans include the required attributes, create or
+stage at least one vertical-specific metric plus Workflow Completion Rate,
+Workflow Blocked/Dependency Blocked Rate, Tool Latency P90, Tool Failure Rate,
+and Fallback Used Rate. A setup that only creates generic proof metrics is not
+complete when the trace data already contains customer-operating signals.
+
 ## Phase 2: Validate Config Shape
 
 Coval custom trace metric fields:
@@ -156,6 +166,14 @@ rejects `count`, `error_rate`, `success_rate`, `p95`, `p99`, or `sum`, create a
 production-safe numeric metric such as `average` or `p90` against a real
 numeric attribute, then document the unsupported desired metric as a public
 API/docs drift item.
+Some deployed API versions also require `metric_attribute` for
+`METRIC_CUSTOM_TRACE` even when a duration- or span-status-based metric would
+be cleaner. In that case, emit the useful duration/status as an explicit
+numeric attribute during instrumentation and create the metric against that
+attribute. Example: copy the measured `insurance.workflow.dispatch_roadside`
+span duration to `conversation.roadside.dispatch.latency_ms` or
+`roadside.dispatch.latency_ms`, then create the P90 metric against the
+attribute.
 
 Production-safe rate pattern: emit numeric `0`/`1` attributes and aggregate with
 `average` when span-level rate aggregations are not accepted. Examples:

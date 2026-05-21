@@ -51,9 +51,31 @@ Decision rules:
 Implementation pattern:
 1. Add an authenticated registration endpoint such as `POST /register-simulation`.
 2. Validate a shared secret or Coval API key header.
-3. Store `simulation_output_id` with a short TTL.
+3. Store `simulation_output_id` with a short TTL and a bounded queue.
 4. On call setup, match the queued ID to the incoming call.
 5. Export call-end spans with `X-Simulation-Id`.
+
+Safety rules for FIFO registration:
+- Registration should queue the simulation ID; it should not immediately bind
+  the ID to an arbitrary already-active provider call. Warm voice services can
+  keep receiving stale `status-update`, `conversation-update`, or
+  `speech-update` webhooks from an older call after a restart.
+- Ignore low-signal provider events before a call state exists. For Vapi, do
+  not create call state from `conversation-update`, `speech-update`,
+  `user-interrupted`, or `status-update` alone.
+- Claim a queued simulation ID only from a new or recent high-signal call event:
+  call start/assistant request, live `tool-calls`, or final
+  `end-of-call-report`. If the implementation supports late claim, bound it to
+  a short recent-call window and log when a call closes without an ID.
+- For local validation after `POST /v1/runs`, poll
+  `GET /v1/simulations?filter=run_id%3D%22<RUN_ID>%22` and register the
+  returned simulation output ID immediately. Do not wait for
+  `GET /v1/runs/{run_id}` `results.output_ids` because that field can appear
+  only after the call completes.
+- State the concurrency limitation plainly. FIFO is acceptable for a
+  single-call smoke test or controlled single-machine demo; production PSTN
+  correlation should prefer a pre-call webhook with a provider call SID,
+  caller-specific token, SIP route, or another deterministic join key.
 
 ## Outbound Voice
 
