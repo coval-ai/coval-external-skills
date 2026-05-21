@@ -104,6 +104,6 @@ Do not use `X-Conversation-Id` for normal simulation runs. The backend rejects n
 
 - Pipecat: prefer enabling framework tracing and enriching the standard spans. Copy helper instrumentation modules into Docker images.
 - LiveKit: session event hooks can emit STT/LLM/TTS/tool spans. Reset exporter state per session.
-- Vapi: end-of-call reports are useful for building a complete trace after the call. Read simulation ID from assistant override variables or SIP headers when available.
+- Vapi: end-of-call reports are useful for building a complete trace after the call. Read simulation ID from assistant override variables or SIP headers when available. For Vapi-hosted PSTN agents, see `vapi-artifact-tracing.md`: use real `tool-calls` webhooks for `llm_tool_call` spans, use `artifact.messages` for `turn` spans, and treat derived STT/LLM/TTS spans as metadata markers unless provider timing is explicitly exposed.
 - Twilio ConversationRelay: usually PSTN, so use pre-call registration for simulations and conversation submit for monitoring.
 - Custom WebSocket bridges: tag spans with the active simulation ID or route exporters per session so concurrent calls do not cross streams.

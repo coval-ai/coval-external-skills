@@ -14,6 +14,7 @@ Load:
 - `../references/coval-tracing-reference.md`
 - `../references/agent-type-routing.md`
 - `../references/span-schema.md` when trace quality is the problem
+- `../references/vapi-artifact-tracing.md` when debugging Vapi webhook traces
 
 ## Phase 1: Identify The Failure Boundary
 
@@ -76,8 +77,17 @@ High-probability causes:
 - payload over roughly 3-4 MB
 - retry resent already accepted spans
 - only auto-instrumented provider spans exist, so the trace lacks STT/TTS/tool context
+- Vapi-hosted PSTN trace uses artifact-derived STT/LLM/TTS marker spans but
+  reports them as measured provider latency
 - tracing helper files or OpenTelemetry dependencies were added locally but not copied into the deployed image/bundle
 - WebSocket smoke tests sent less audio than the agent's response threshold, or the agent streamed a long canned response after Coval closed the socket
+
+For Vapi-hosted PSTN agents, inspect the source of each span before calling it
+real provider observability. `tool-calls` webhooks are real tool execution.
+`end-of-call-report.artifact.messages` are real transcript/turn evidence.
+Provider-internal STT/LLM/TTS timing is not real unless the span has measured
+provider timing or explicit provider fields rather than
+`trace.timing=metadata_marker`.
 
 ## Phase 4: Verify In Coval UI
 

@@ -76,6 +76,10 @@ Voice agents:
 - Dependency blocked rate: `conversation` / `workflow.dependency_blocked` / `average` / `ratio`
 - Tool latency P90: `llm_tool_call` / `tool.latency_ms` / `p90` / `ms`
 
+Only create LLM/TTS/STT latency metrics when those spans contain measured
+provider timing. For Vapi artifact-derived marker spans, use tool/workflow
+metrics and trace-aware judges instead.
+
 WebSocket or realtime agents:
 - Realtime response TTFB: `llm` or `realtime` / `metrics.ttfb` / `p95` / `s`
 - Stream error rate: `transport` or `realtime` / `error_rate` / `percent`
@@ -102,6 +106,41 @@ adding instrumentation and have a validation run in progress to prove it.
 | Is the intended outcome happening? | Workflow Completion Rate | `conversation` / `workflow.completed` / `average` / `ratio` | Set `1` when the booking, reschedule, order, claim, handoff, or other target outcome completes; otherwise `0`. |
 | How often does the agent need backup behavior? | Fallback Rate | `conversation` / `workflow.fallback_used` / `average` / `ratio` | Set `1` when fallback, retry exhaustion, escalation, or transfer was needed; otherwise `0`. |
 | What is the value of completed carts or orders? | Cart Total Avg | `conversation` / `cart.total_amount` / `average` / unit omitted | Record a numeric amount on the root conversation or checkout span; include currency in the attribute name, metric name, or description when needed. |
+
+## Trace-Aware LLM Judge Recipes
+
+LLM judge metrics with `include_traces: true` are useful when the judge needs
+both transcript and trace context. They complement `METRIC_CUSTOM_TRACE`; they
+do not replace numeric trace metrics.
+
+Use them for questions like:
+- Did the agent verify identity before account-specific tool calls?
+- Did spoken claims match successful tool outputs?
+- Did the agent recover correctly after tool errors or dependency failures?
+- Did the agent confirm sensitive identifiers before using them in tool
+  arguments?
+
+Creation rules:
+1. Fetch the current Metrics OpenAPI and verify `include_traces` is supported
+   for the selected LLM judge metric type.
+2. Reuse the customer's existing judge intent, but create a new trace-aware
+   version unless the customer explicitly asked to mutate the existing metric.
+3. In the prompt, name the trace evidence the judge should use:
+   `llm_tool_call`, `function.name`, `function.arguments`, `tool.error`,
+   `error.type`, and root workflow attributes.
+4. Attach the judge to the same agent/run template as the numeric trace metrics.
+5. Run a validation simulation and report the computed value.
+
+Example:
+```json
+{
+  "metric_name": "Trace-Aware Tool Output Grounding",
+  "description": "Uses transcript plus OTel tool-call traces to verify agent claims are grounded in successful tool outputs.",
+  "metric_type": "METRIC_LLM_BINARY",
+  "prompt": "Use BOTH the transcript and OTel trace context. Score YES only if the agent's customer-facing claims are supported by successful llm_tool_call outputs. Score NO if the agent asserts outcomes not supported by successful tool outputs, or if it ignores a tool.error or error.type result and presents the workflow as completed.",
+  "include_traces": true
+}
+```
 
 ## Vertical Templates
 

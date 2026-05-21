@@ -17,6 +17,7 @@ Load these references as needed:
 - `../references/span-schema.md` for canonical spans, attributes, aliases, and guardrails
 - `../references/agent-type-routing.md` for framework-specific trace boundaries
 - `../references/coval-tracing-reference.md` for viewer/search behavior and ingestion limits
+- `../references/vapi-artifact-tracing.md` when the agent uses Vapi webhooks
 
 ## Phase 1: Inspect Current Trace Quality
 
@@ -37,9 +38,16 @@ Start from evidence, not assumptions.
    - tool spans missing
    - parent/child structure is flat or misleading
    - attributes are unsafe, oversized, or high-cardinality
+   - turn spans exist but are undifferentiated (all named `turn` with no role
+     distinction) — this makes the trace viewer a wall of identical rows and
+     hides the conversation structure; see Phase 2 for the fix
 5. Check whether existing framework instrumentation should be enriched instead of duplicated.
 
 Do not add manual duplicate spans for operations already emitted by Pipecat, LiveKit, Vapi, or an existing OTel integration unless the existing span cannot be enriched.
+For Vapi-hosted PSTN agents, be precise about what the webhook can prove:
+`tool-calls` webhooks are real tool execution; `end-of-call-report.artifact`
+messages are real transcript/turn source data; provider-internal STT/LLM/TTS
+timing is not available unless Vapi explicitly provides it.
 
 ### Phase 1b: Discover Business Events Already In The Code
 
@@ -75,6 +83,21 @@ Keep span names stable and low-cardinality. Put IDs, provider names, endpoint na
 Match the public span naming convention before adding custom business spans:
 canonical names get semantic colors, labels, and built-in trace metric support.
 
+For Vapi artifact-based enrichment:
+- create **`turn.assistant`** and **`turn.user`** spans (not a flat `turn`) from
+  `artifact.messages` timing windows — role-differentiated names produce
+  visually distinct rows in the trace viewer; add `turn.text` (first ~200 chars
+  of the message) so content is readable without opening the detail panel
+- create `llm_tool_call` spans from live tool-call webhooks and handler results
+- use provider marker spans only when clearly labeled with
+  `trace.timing=metadata_marker`, or use `stt_marker`/`llm_marker`/`tts_marker`
+- never give marker spans the same full duration as the enclosing turn
+- never add fake confidence, fake TTFB, or fake provider latency values
+- when reconstructing turn spans from Vapi `artifact.messages`, apply the
+  timestamp guardrails in `../references/vapi-artifact-tracing.md` to avoid
+  OTel int64 overflow from the `time` field and misrouted `secondsFromStart`
+  values
+
 **Prefer OTel span events over new spans for moment-in-time annotations.**
 A span event (`span.add_event("simulation_id_received", {...})`) is a cheap
 timestamped marker on an existing span — it does not bloat the span count, does
@@ -103,6 +126,10 @@ Set OTel status to `ERROR` on failing provider/tool/API spans. Coval custom trac
 Also emit numeric `0`/`1` flags for important rates. Some public metric
 creation APIs require a numeric `metric_attribute`; `average` over these flags
 preserves the rate while still working in those environments.
+For Vapi-hosted agents, prefer tool/workflow attributes such as `tool.error`,
+`tool.latency_ms`, `tool.call.count`, `workflow.completed`,
+`workflow.dependency_blocked`, and `workflow.fallback_used` over provider
+latency attributes unless the provider timing is explicitly measured.
 
 ## Phase 4: Protect Customers
 
