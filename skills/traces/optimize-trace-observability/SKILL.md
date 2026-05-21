@@ -38,6 +38,9 @@ Start from evidence, not assumptions.
    - tool spans missing
    - parent/child structure is flat or misleading
    - attributes are unsafe, oversized, or high-cardinality
+   - turn spans exist but are undifferentiated (all named `turn` with no role
+     distinction) — this makes the trace viewer a wall of identical rows and
+     hides the conversation structure; see Phase 2 for the fix
 5. Check whether existing framework instrumentation should be enriched instead of duplicated.
 
 Do not add manual duplicate spans for operations already emitted by Pipecat, LiveKit, Vapi, or an existing OTel integration unless the existing span cannot be enriched.
@@ -81,12 +84,19 @@ Match the public span naming convention before adding custom business spans:
 canonical names get semantic colors, labels, and built-in trace metric support.
 
 For Vapi artifact-based enrichment:
-- create `turn` spans from `artifact.messages` timing windows
+- create **`turn.assistant`** and **`turn.user`** spans (not a flat `turn`) from
+  `artifact.messages` timing windows — role-differentiated names produce
+  visually distinct rows in the trace viewer; add `turn.text` (first ~200 chars
+  of the message) so content is readable without opening the detail panel
 - create `llm_tool_call` spans from live tool-call webhooks and handler results
 - use provider marker spans only when clearly labeled with
   `trace.timing=metadata_marker`, or use `stt_marker`/`llm_marker`/`tts_marker`
 - never give marker spans the same full duration as the enclosing turn
 - never add fake confidence, fake TTFB, or fake provider latency values
+- when reconstructing turn spans from Vapi `artifact.messages`, apply the
+  timestamp guardrails in `../references/vapi-artifact-tracing.md` to avoid
+  OTel int64 overflow from the `time` field and misrouted `secondsFromStart`
+  values
 
 **Prefer OTel span events over new spans for moment-in-time annotations.**
 A span event (`span.add_event("simulation_id_received", {...})`) is a cheap

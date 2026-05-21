@@ -107,6 +107,16 @@ actual trace data unless you are also adding that instrumentation and have a
 validation run in progress to prove it. In that case, stage the metric body and
 create it only after the span/attribute appears in Coval.
 
+Do not create latency or error-rate metrics against in-process mock or stub tool
+handlers. If the tool handler is a stub that returns immediately (sub-ms
+`tool.latency_ms`, `tool.error` always 0), those metrics have no signal — they
+measure the stub, not the real downstream service. Metrics like P90 Tool Latency
+and Tool Error Rate become meaningful only when the handlers call real external
+APIs. If the agent currently uses stubs, note this and defer those metrics to
+when real handlers are wired. Creating them against stubs is worse than
+omitting them: they produce false confidence (latency always excellent, error
+rate always zero) that masks real production behavior.
+
 Do not create latency custom trace metrics from artifact-derived marker spans.
 For Vapi-hosted agents, `stt`/`llm`/`tts` spans that carry
 `trace.timing=metadata_marker` are not measured provider latency. Use real

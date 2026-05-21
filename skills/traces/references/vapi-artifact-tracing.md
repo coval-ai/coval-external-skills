@@ -64,12 +64,19 @@ If no verified Coval pre-call webhook field is available, use a self-contained
 registration path for validation:
 
 1. Add authenticated `POST /register-simulation`.
+   - Require the same Coval API key in the `x-api-key` request header so the
+     endpoint is not publicly writable.
+   - Accept `simulation_output_id` in the JSON body (this is the simulation
+     output ID returned by the Coval run, not the run ID itself).
+   - Return `{"registered": true, "simulation_output_id": "<id>"}` on success.
 2. Queue the Coval simulation output ID with a short TTL.
 3. Keep at least one warm instance when the queue is in memory. Scale-to-zero
    clears the queue.
 4. Lazily create a per-call trace state on the first useful Vapi webhook
    (`tool-calls`, `conversation-update`, `status-update`, or
-   `end-of-call-report`).
+   `end-of-call-report`). For inbound PSTN, `assistant-request` typically does
+   not arrive at the customer server when Coval uses `vapi_assistant_id`
+   directly — do not depend on it for session creation.
 5. Claim the queued simulation ID by FIFO only when validation concurrency is
    controlled, or by call metadata when a stable match key exists.
 6. At `end-of-call-report`, do a final late claim before export. This handles
@@ -82,6 +89,38 @@ After validation, recommend durable production wiring:
 - connect the same registration endpoint to the verified Coval pre-call webhook
   field when available, or
 - provision SIP if the customer needs per-call ID injection without FIFO.
+
+## Vapi Timestamp Guardrails
+
+When reconstructing turn spans from `artifact.messages`, Vapi timestamp fields
+have known quirks that cause OTel int64 overflow or wrong span placement if not
+guarded:
+
+- **`startedAt` for call wall-clock anchor**: this field is on the
+  `end-of-call-report` message envelope (`message["startedAt"]`), not on the
+  nested `call` sub-object (which only has `createdAt`/`updatedAt`). Always
+  read from the envelope first.
+- **`time` field**: absolute Unix milliseconds, not seconds-from-start.
+  Do not use `time` as a turn offset — multiplying by `1e9` overflows the OTel
+  int64 nanosecond timestamp. Use `secondsFromStart` for offsets instead.
+- **`secondsFromStart` anomaly**: most message types populate this as a small
+  positive offset (e.g. `4.2` = 4.2 s into the call). However, some Vapi
+  message types populate it with an absolute Unix-millisecond timestamp
+  instead. Guard against this: if `secondsFromStart > 7200` (more than 2 hours
+  into a call is implausible), skip or discard that message. Apply the same
+  guard to `endTime`.
+
+Safe turn span timing pattern:
+```python
+t_start = msg.get("secondsFromStart")
+if t_start is None or t_start > 7200:
+    continue  # skip messages with implausible offsets
+t_end_raw = msg.get("endTime")
+t_end = (t_end_raw if t_end_raw is not None and t_end_raw <= 7200
+         else t_start + max(0.5, word_count * 0.35))
+start_ns = int((call_start_epoch_s + t_start) * 1_000_000_000)
+end_ns   = int((call_start_epoch_s + t_end)   * 1_000_000_000)
+```
 
 ## Span Shape
 
@@ -98,7 +137,17 @@ Recommended Vapi PSTN trace:
   - numeric `tool.dependency_unavailable`
   - `tool.result.count`
   - `error.type` and ERROR status on failed tool calls
-- `turn` spans from `artifact.messages`
+- **`turn.assistant` and `turn.user` spans** from `artifact.messages` (name
+  encodes role so trace viewer rows are visually distinct; do not use a flat
+  `turn` name for all messages):
+  - `turn.role`: `"assistant"` or `"user"`
+  - `turn.text`: first ~200 chars of the message content — makes the span
+    readable directly in the trace viewer without opening the detail panel;
+    do not include full transcripts as this can include PII at volume
+  - `turn.word_count`: word count for verbosity metrics
+  - `turn.content_length`: character count
+  - `turn.seconds_from_start`: offset from call start (already used for timing;
+    keep as attribute for turn-timeline metrics)
 - provider marker spans only with explicit marker attributes, or marker-suffixed
   names
 - root numeric attributes:
