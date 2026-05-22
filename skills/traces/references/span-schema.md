@@ -21,7 +21,9 @@ public Span Naming Conventions in the Coval OpenTelemetry docs.
 
 Any span name works and appears in Coval, but names outside this table get
 auto-assigned colors instead of semantic labels. Use `service.name` in the
-resource to group spans by service.
+resource to group spans by service. Add stable resource attributes when known:
+`service.namespace`, `agent.name`, `agent.provider`, `coval.agent_type`, and
+`coval.correlation.method`.
 
 New integrations should emit canonical names and attributes first. Add custom
 metric attributes to those spans where possible instead of inventing dynamic
@@ -34,14 +36,23 @@ required for semantic UI colors, but they make custom trace metrics more useful.
 
 `conversation`:
 - `call.duration_seconds`
+- `call.cost_usd`
 - safe `session.id`
 - safe `customer.workflow`
+- `conversation.summary` or a bounded summary
+- `conversation.summary.length_chars`
+- `transcript.length_chars`
+- `transcript.turn.count`
 - `tool.call.count`
 - `tool.failure.count`
 - `workflow.completed`
 - `workflow.dependency_blocked`
 - `workflow.fallback_used`
 - `cart.total_amount` or `order.total_amount`
+- domain-specific workflow signals, such as `roadside.dispatch.latency_ms`,
+  `roadside.dispatch.slow`, `fnol.fields_captured.count`,
+  `fraud.pattern_detected`, `reservation.date.changed`,
+  `identity.verification.completed`, or `payment_plan.blocked`
 
 `llm_tool_call`:
 - `tool.latency_ms`
@@ -50,6 +61,13 @@ required for semantic UI colors, but they make custom trace metrics more useful.
 - `tool.result.count`
 
 Use numeric `0`/`1` values for rate-style flags.
+
+Add a duration-bearing custom workflow span when it is useful in the trace
+timeline, but also put the numeric metric attribute on a canonical span or the
+root conversation when the deployed metric API requires `metric_attribute`.
+For example, emit both `insurance.workflow.dispatch_roadside` as a span and
+`roadside.dispatch.latency_ms` on `conversation` if the metric should compute
+reliably through API-created custom trace metrics.
 
 ## Required For Built-In Value
 
@@ -104,6 +122,10 @@ Choose attributes that answer a debugging or measurement question:
 - `workflow.fallback_used`
 - `cart.total_amount`
 - `order.total_amount`
+- `roadside.dispatch.latency_ms`
+- `roadside.dispatch.slow`
+- `fnol.fields_captured.count`
+- `fraud.pattern_detected`
 - `fallback.used`
 - `policy.blocked`
 - `appointment.lookup_latency_ms`
