@@ -4,4 +4,4 @@ Skills for analyzing Coval reports and turning grouped evaluation results into c
 
 | Skill | Description |
 |-------|-------------|
-| [analyze-persona-report](./analyze-persona-report/) | Analyze a multi-run persona report, find persona-specific regressions, inspect evidence, and recommend agent fixes |
+| [analyze-audio-quality-report](./analyze-audio-quality-report/) | Analyze an audio-quality testing report, find scenario-specific regressions, inspect evidence, and recommend agent fixes |
