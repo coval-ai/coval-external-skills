@@ -101,12 +101,16 @@ agent already has attached when they fit.
 |---|---|
 | Task outcome | Composite evaluation, task-completion LLM judges, or scenario-specific pass/fail metrics |
 | Responsiveness | Latency, time to first audio, trace TTFB, provider response-time |
-| Speech recognition | STT Word Error Rate (traced agents), Transcription Error, STT Word Error Rate (Audio Upload) when ground-truth transcripts are available |
+| Speech recognition | STT Word Error Rate for traced agents, or Transcription Error for audio-backed conversations |
 | Generated voice quality | Voice Quality; Speech Artifact Score and artifact-specific metrics |
 | Conversation flow | Interruption rate, silence, sentiment, turn-level timing |
 
 Do **not** include `manager_audio_frequency` — it measures signal
 characteristics, not perceived audio quality.
+
+Do **not** recommend `STT Word Error Rate (Audio Upload)` for this general
+workflow. It only applies when the test set uses uploaded audio with reference
+transcripts, which is a different setup from the normal voice-simulation sweep.
 
 ```bash
 coval metrics list
