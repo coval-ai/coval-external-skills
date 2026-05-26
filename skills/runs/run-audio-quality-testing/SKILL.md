@@ -196,7 +196,7 @@ Concatenate the seven run IDs and produce the report URL:
 ```bash
 RUN_IDS_CSV=$(IFS=,; echo "${RUN_IDS[*]}")
 ORG_SLUG=$(coval whoami --format json | jq -r '.organization.slug')
-echo "https://app.coval.dev/${ORG_SLUG}/reports/multi?run_ids=${RUN_IDS_CSV}"
+echo "https://app.coval.dev/${ORG_SLUG}/reports/new?run_ids=${RUN_IDS_CSV}"
 ```
 
 Tell the user to:
@@ -268,7 +268,7 @@ When the skill finishes, return a short, actionable summary:
 | Low Volume Speaker | … | … | … |
 
 **Multi-run report:**
-https://app.coval.dev/<org>/reports/multi?run_ids=<csv> — open and set **Compare by → Persona**, then save.
+https://app.coval.dev/<org>/reports/new?run_ids=<csv> — open and set **Compare by → Persona**, then save.
 
 **Next step:** run the `analyze-audio-quality-report` skill on the saved report.
 ```
