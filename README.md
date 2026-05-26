@@ -13,6 +13,7 @@ This repository contains reusable skills for interacting with Coval's evaluation
 | [Onboarding](./skills/onboarding/) | Interactive guided setup for first evaluation (personas, test cases, metrics, launch) |
 | [Runs](./skills/runs/) | Launch and monitor evaluation runs |
 | [Simulations](./skills/simulations/) | Analyze results and download audio |
+| [Reports](./skills/reports/) | Analyze multi-run reports and turn grouped results into action plans |
 | [Agents](./skills/agents/) | Create, configure, and manage AI agents |
 | [Personas](./skills/personas/) | Define simulation personas for testing |
 | [Test Cases](./skills/test-cases/) | Build and organize evaluation test cases (includes HuggingFace import) |
