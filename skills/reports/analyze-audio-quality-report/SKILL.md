@@ -57,6 +57,8 @@ magnitude for:
 | Speech recognition | STT WER from traces, transcription error, audio-upload WER with ground truth |
 | Generated voice quality | Voice Quality, Speech Artifact Score, artifact-specific metrics |
 | Conversation flow | interruption rate, silence, repetition loops, sentiment, turn timing |
+| Call shape | turn count, audio duration, early termination, abnormally short or long calls |
+| Scoreability | UNKNOWN, missing, failed, or unscored metric results |
 
 Use the metric's natural direction. Lower is better for latency, WER,
 transcription error, artifact rate, silence, and interruption problems. Higher
@@ -65,12 +67,20 @@ is better for success, completion, accuracy, and quality metrics.
 Do not overfit to one row. Treat one-off failures as hypotheses unless the
 metric, transcript, recording, or trace evidence supports the pattern.
 
+Treat UNKNOWN, missing, failed, or unscored metric results as evidence to
+inspect, not as data to ignore. Under heavy audio stress, a judge may be unable
+to score because the call ended early, the transcript is too sparse, or the
+interaction became too anomalous to evaluate.
+
 ### 3. Inspect Representative Evidence
 
 Open or request representative simulations:
 - worst regression for each affected audio condition
 - one healthy baseline simulation
 - any surprising metric outlier
+- any UNKNOWN, missing, failed, or unscored metric result
+- very short calls, very long calls, or early terminations compared with baseline
+- cases where binary task metrics passed but the transcript or recording shows a materially different experience
 - Human Review disagreements, if present
 
 For each important example, inspect the transcript and recording when available.
@@ -110,10 +120,10 @@ advice. Separate:
 - **Coverage changes**: add more cases or audio conditions only when the
   current data shows a blind spot or the sample size is too thin.
 
-Tie each recommendation to the audio condition, metric delta, and
-representative simulation evidence that motivated it. If a recommendation
-cannot be tied to evidence, mark it as a hypothesis and explain how to validate
-it.
+Tie each recommendation to the audio condition, metric delta, call-shape change,
+scoreability issue, and representative simulation evidence that motivated it.
+If a recommendation cannot be tied to evidence, mark it as a hypothesis and
+explain how to validate it.
 
 ### 6. Plan The Confirmation Run
 
@@ -135,6 +145,7 @@ Return:
 
 ### Executive Summary
 - Biggest audio-condition regression:
+- Most important call-shape or scoreability anomaly:
 - Most likely root cause:
 - Highest-confidence next fix:
 
@@ -144,12 +155,13 @@ Return:
 - Missing or weak evidence:
 
 ### Audio-Condition Regression Table
-| Audio Condition | Main Regression | Evidence | Likely Cause | Confidence |
-|---------|-----------------|----------|--------------|------------|
+| Audio Condition | Main Regression Or Anomaly | Evidence | Likely Cause | Confidence |
+|-----------------|----------------------------|----------|--------------|------------|
 
 ### Representative Evidence
 - Baseline simulation:
 - Regression examples:
+- UNKNOWN/unscored examples:
 - Trace/Human Review evidence:
 
 ### Recommended Agent Fixes
@@ -173,6 +185,8 @@ evidence when available.
 - Do not expose API keys, secrets, or private customer data.
 - Do not claim traces explain a result unless trace data was available and
   inspected.
+- Do not ignore UNKNOWN, missing, failed, or unscored metrics. Explain whether
+  they look like measurement gaps or symptoms of an anomalous conversation.
 - Do not treat generated voice quality metrics as STT accuracy metrics, or STT
   metrics as TTS quality metrics.
 - Do not recommend changing Coval metrics or tests when the evidence points to
