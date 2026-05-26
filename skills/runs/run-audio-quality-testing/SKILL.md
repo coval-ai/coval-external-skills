@@ -148,6 +148,10 @@ SUB_SAMPLE_SEED=42
 SUB_SAMPLE_SIZE=0   # 0 = all cases; set to a positive integer to subsample
 CONCURRENCY=5
 TAGS="audio-quality-testing,cookbook"
+metric_args=()
+if [ -n "${METRIC_IDS:-}" ]; then
+  metric_args=(--metric-ids "$METRIC_IDS")
+fi
 
 for persona_id in "$STANDARD_ID" "$IMPATIENT_ID" "$CONFUSED_ID" \
                   "$INTERRUPTIVE_ID" "$SUPER_FAST_ID" \
@@ -156,7 +160,7 @@ for persona_id in "$STANDARD_ID" "$IMPATIENT_ID" "$CONFUSED_ID" \
     --agent-id "$AGENT_ID" \
     --persona-id "$persona_id" \
     --test-set-id "$TEST_SET_ID" \
-    --metric-ids "$METRIC_IDS" \
+    "${metric_args[@]}" \
     --concurrency "$CONCURRENCY" \
     --sub-sample-size "$SUB_SAMPLE_SIZE" \
     --sub-sample-seed "$SUB_SAMPLE_SEED" \
