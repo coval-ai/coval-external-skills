@@ -9,6 +9,7 @@ Skills for launching and monitoring Coval evaluation runs.
 | [launch-run](./launch-run/) | Launch an evaluation run against an agent |
 | [watch-run](./watch-run/) | Monitor run progress with live updates |
 | [quick-eval](./quick-eval/) | Full workflow: launch, watch, and summarize results |
+| [run-audio-quality-testing](./run-audio-quality-testing/) | End-to-end audio-quality testing sweep — one run per audio-robustness persona, then a multi-run report grouped by Persona |
 
 ## Overview
 
