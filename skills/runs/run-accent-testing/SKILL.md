@@ -203,20 +203,36 @@ Notes:
 ### Step 5: Resolve Persona IDs
 
 Resolve all seven persona IDs by exact-name match (Standard Customer plus the
-six accent personas):
+six accent personas) into ordered arrays the launch step reuses. Keep Standard
+Customer first so it is the baseline column in the report:
 
 ```bash
-for name in "Standard Customer" \
-            "Indian Accent (Vidya)" "Scottish Accent (Chris)" \
-            "Chinese Accent (Jay)" "US Southern Accent (Cletus)" \
-            "Nigerian Accent (Kehinde)" "Spanish Accent (Lisa)"; do
-  coval personas list --filter "name:\"$name\"" --format json \
-    | jq -r --arg n "$name" '.[] | select(.name == $n) | "\(.id)\t\(.name)"'
+# Canonical persona order — Standard Customer first (baseline).
+PERSONA_NAMES=(
+  "Standard Customer"
+  "Indian Accent (Vidya)"
+  "Scottish Accent (Chris)"
+  "Chinese Accent (Jay)"
+  "US Southern Accent (Cletus)"
+  "Nigerian Accent (Kehinde)"
+  "Spanish Accent (Lisa)"
+)
+
+PERSONA_IDS=()
+for name in "${PERSONA_NAMES[@]}"; do
+  id=$(coval personas list --filter "name:\"$name\"" --format json \
+    | jq -r --arg n "$name" '.[] | select(.name == $n) | .id' | head -1)
+  if [ -z "$id" ]; then
+    echo "MISSING persona: $name — resolve Step 4 before launching" >&2
+    exit 1
+  fi
+  PERSONA_IDS+=("$id")
+  echo "$id  $name"
 done
 ```
 
-If any persona is still missing after Step 4, stop and fix it before launching —
-do not skip an accent.
+If any persona is still missing after Step 4, the loop stops — fix it before
+launching. Do not skip an accent.
 
 ### Step 6: Launch The Runs
 
@@ -235,9 +251,12 @@ if [ -n "${METRIC_IDS:-}" ]; then
   metric_args=(--metric-ids "$METRIC_IDS")
 fi
 
-for persona_id in "$STANDARD_ID" "$VIDYA_ID" "$CHRIS_ID" "$JAY_ID" \
-                  "$CLETUS_ID" "$KEHINDE_ID" "$LISA_ID"; do
-  coval runs launch \
+# Uses PERSONA_NAMES / PERSONA_IDS from Step 5; captures each run_id into RUN_IDS.
+RUN_IDS=()
+for i in "${!PERSONA_IDS[@]}"; do
+  persona_id="${PERSONA_IDS[$i]}"
+  persona_name="${PERSONA_NAMES[$i]}"
+  resp=$(coval runs launch \
     --agent-id "$AGENT_ID" \
     --persona-id "$persona_id" \
     --test-set-id "$TEST_SET_ID" \
@@ -246,12 +265,16 @@ for persona_id in "$STANDARD_ID" "$VIDYA_ID" "$CHRIS_ID" "$JAY_ID" \
     --sub-sample-size "$SUB_SAMPLE_SIZE" \
     --sub-sample-seed "$SUB_SAMPLE_SEED" \
     --tags "$TAGS" \
-    --name "Accent — $persona_id" \
-    --format json
+    --name "Accent — $persona_name" \
+    --format json)
+  run_id=$(echo "$resp" | jq -r '.run_id // .id')
+  RUN_IDS+=("$run_id")
+  echo "launched $persona_name -> $run_id"
 done
 ```
 
-Capture every `run_id` from each launch response.
+The loop appends each launched `run_id` to `RUN_IDS`, which Step 7 watches and
+Step 8 turns into the report URL.
 
 **Tip:** the public API also supports a batch launch (`POST /v1/runs/batch`) if
 you prefer one HTTP call. The CLI does not expose batch launch today.
