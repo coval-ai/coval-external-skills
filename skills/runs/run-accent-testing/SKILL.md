@@ -131,13 +131,32 @@ transcripts, which is a different setup from the normal voice-simulation sweep.
 > traces) as the reliable recognition headline, and only rely on `STT Word Error
 > Rate` after you have confirmed it scores on a real run for this agent.
 
+Recognition that works **without agent traces** (the common case — most agents,
+Vapi/PSTN/Pipecat included, emit no STT spans) is **Transcription Error**: a
+Coval built-in that re-transcribes the recording with its own STT and scores word
+error rate, so it needs no traces. It is a built-in (`organization_id=NULL`) and
+can be **paged out of a plain `coval metrics list`**, so resolve it by name —
+note the metrics filter uses `=`, not the `:` personas use:
+
 ```bash
-coval metrics list
+# Recognition metric that needs no traces — always attach this.
+TRANSCRIPTION_ERROR_ID=$(coval metrics list --include-builtin --page-size 100 \
+  --filter 'metric_name="Transcription Error"' --format json \
+  | jq -r '.[] | select(.metric_name == "Transcription Error") | .id' | head -1)
+
+# Browse task-outcome / responsiveness / flow metrics; reuse the agent's
+# attached metrics when they fit.
+coval metrics list --include-builtin
 ```
 
-Collect the chosen metric IDs into a comma-separated string for the launch step.
-If the user wants to use the agent's default metrics, omit `--metric-ids`
-entirely on the launch call.
+Build `METRIC_IDS` as a comma-separated string with **Transcription Error first**,
+then the task-outcome and call-shape metric IDs you chose. **Always attach a
+working recognition metric — measuring recognition is the entire point of an
+accent sweep.** Do **not** just omit `--metric-ids` to fall back on the agent's
+defaults: many agents have no metrics attached (or none that measure
+recognition), so the sweep would score everything *except* the thing it exists to
+test. Add `STT Word Error Rate` only *in addition* (never instead), and only
+after confirming the agent emits STT trace spans and it actually scores.
 
 ### Step 4: Ensure The Accent Personas Exist
 
