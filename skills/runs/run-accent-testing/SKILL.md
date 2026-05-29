@@ -1,6 +1,6 @@
 ---
 name: run-accent-testing
-description: End-to-end Coval accent testing workflow. Creates one persona per accent (each using a distinct accent voice and mirroring your Standard Customer behavior), launches one run per accent against the same voice agent + test set + metrics, polls for completion, builds a per-persona comparison table from the results, and produces the multi-run report URL grouped by Persona. Use when a user wants to follow the Testing Across Accents cookbook (https://docs.coval.dev/guides/testing-across-accents) without doing each step by hand.
+description: End-to-end Coval accent testing workflow. Creates one persona per accent (each using a distinct accent voice and mirroring your Standard Customer behavior), launches one run per accent against the same voice agent + test set + metrics, polls for completion, builds a per-persona comparison table from the results, and creates the saved multi-run report (grouped by Persona) via the public API. Use when a user wants to follow the Testing Across Accents cookbook (https://docs.coval.dev/guides/testing-across-accents) without doing each step by hand.
 argument-hint: "[agent-name-or-id] [test-set-name-or-id]"
 metadata:
   author: coval-ai
@@ -13,8 +13,9 @@ metadata:
 
 Set up and launch a Coval accent testing sweep end-to-end: one voice agent, one
 test set, an accent persona pack, shared metrics, a per-persona comparison table
-built from the results, and a multi-run report grouped by **Persona**. Mirrors
-the public cookbook at https://docs.coval.dev/guides/testing-across-accents.
+built from the results, and a saved multi-run report grouped by **Persona**
+(created for you via the API). Mirrors the public cookbook at
+https://docs.coval.dev/guides/testing-across-accents.
 
 Unlike the audio-quality pack, **the accent personas are not built-in**. This
 skill creates them in the user's organization, one per accent voice, and makes
@@ -31,8 +32,8 @@ recommended-fixes write-up.
   want to hand-create personas and hand-launch each run.
 - The user has a voice agent (PSTN, SIP, WebSocket, LiveKit, Vapi, OpenAI
   Realtime, Gemini Realtime, etc.) and a test set they trust.
-- The user wants a multi-run report URL grouped by Persona that they can save,
-  share, or pass to the analysis skill.
+- The user wants a saved multi-run report grouped by Persona (created via the
+  API) that they can open, share, or pass to the analysis skill.
 
 Do **not** use this skill for chat-only agents. Accent testing exercises speech
 recognition (STT) and audio timing, none of which a chat agent runs.
@@ -387,33 +388,54 @@ Rules for the table:
   same metric/case too. A failure the neutral baseline also hits is an agent,
   tool, or judge issue, not an accent issue.
 
-### Step 9: Build The Multi-Run Report URL
+### Step 9: Create The Saved Report (grouped by Persona)
 
-For the interactive, shareable report, concatenate the run IDs into a
-report-builder URL. Resolve the org slug from the **agent or test-set URL the
-user gave you** (`https://app.coval.dev/<org>/agents/<id>` → `<org>`). `coval
-whoami` does **not** return the slug today, so do not try to parse it from there.
+Create the saved multi-run report directly through the public API so it lands in
+the org's Reports section **already grouped by Persona** — no manual builder
+step. The CLI has no `reports` command yet, so call the API directly (a `coval
+reports create` command would be a good follow-up). Use the same API key your
+`coval` CLI is authenticated with.
+
+```bash
+# Resolve ORG_SLUG from the agent/test-set app URL the user gave you, e.g.
+# https://app.coval.dev/acme-co/agents/AbC123 -> ORG_SLUG=acme-co.
+ORG_SLUG="${ORG_SLUG:?set ORG_SLUG to the org slug from the Coval app URL}"
+
+# Build the run-id JSON array from the RUN_IDS bash array (Step 6).
+RUN_IDS_JSON=$(printf '%s\n' "${RUN_IDS[@]}" | jq -R . | jq -s -c .)
+
+resp=$(curl -s -X POST "https://api.coval.dev/v1/reports" \
+  -H "x-api-key: ${COVAL_API_KEY:?use the API key your coval CLI is authenticated with}" \
+  -H "content-type: application/json" \
+  -d "$(jq -nc --arg name "Accent sweep — $(date +%F)" --argjson run_ids "$RUN_IDS_JSON" \
+        '{name: $name, run_ids: $run_ids, compare_by: "persona"}')")
+
+REPORT_ID=$(echo "$resp" | jq -r '.report.id // empty')
+if [ -n "$REPORT_ID" ]; then
+  echo "Saved report: https://app.coval.dev/${ORG_SLUG}/reports/${REPORT_ID}"
+else
+  echo "Report not created (response: $resp)" >&2
+fi
+```
+
+`compare_by: "persona"` persists `view_config.compareBy=persona`, so the saved
+report **opens already grouped by Persona** at
+`https://app.coval.dev/<org>/reports/<id>`. The default is `PRIVATE`; pass
+`"permissions": "PUBLIC"` only if the user wants a login-free shareable link
+(that also marks the included runs public).
+
+**Fallback — if `POST /v1/reports` returns 404** (an older Coval without the
+reports API), emit the report **builder** URL and have the user group + save by
+hand instead:
 
 ```bash
 RUN_IDS_CSV=$(IFS=,; echo "${RUN_IDS[*]}")
-# Set ORG_SLUG from the org segment of the Coval app URL the user pasted, e.g.
-# https://app.coval.dev/acme-co/agents/AbC123  ->  ORG_SLUG=acme-co
-ORG_SLUG="${ORG_SLUG:?set ORG_SLUG to the org slug from the Coval app URL}"
 echo "https://app.coval.dev/${ORG_SLUG}/reports/new?run_ids=${RUN_IDS_CSV}"
+# Open it, set Compare by -> Persona (default is None), then Save.
 ```
 
-This link opens the report **builder**. The grouping is not encoded in the URL
-(the default Compare-by is None, and there is no query param for it today), so
-tell the user to:
-
-1. Open the URL.
-2. Set **Compare by** to **Persona** — this is the grouped view, and it is a
-   manual step.
-3. Save the report with a descriptive name to preserve the grouping.
-4. Use the report's **Share** button for a login-free shareable link.
-
-The Step 8 table already gives the user the persona comparison without opening
-the app; this saved report is the interactive, shareable version of the same data.
+The Step 8 table already gives the user the persona comparison inline; this saved
+report is the interactive, shareable version of the same data.
 
 ### Step 10: Hand Off Analysis
 
@@ -462,8 +484,8 @@ When the skill finishes, return a short, actionable summary:
 
 **Largest deltas vs Standard:** <one line per notable accent delta, or "none — all accents within noise of baseline">. Note any `FAILED`/missing metrics as measurement gaps, and flag small-sample (few-sims-per-accent) conclusions as tentative.
 
-**Multi-run report:**
-https://app.coval.dev/<org>/reports/new?run_ids=<csv> — open and set **Compare by → Persona** (manual; default is None), then save.
+**Saved report (grouped by Persona):**
+https://app.coval.dev/<org>/reports/<id> — created via `POST /v1/reports` (`compare_by: persona`); opens already grouped. (Fallback if the reports API was unavailable: the builder URL `…/reports/new?run_ids=<csv>` + a manual Compare-by-Persona save.)
 
 **Next step:** run the `analyze-accent-report` skill on the saved report.
 ```
