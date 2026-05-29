@@ -113,11 +113,11 @@ Use accent hypotheses, then verify them against evidence:
 |--------|-------------------------------|
 | Standard Customer | General agent, test, metric, or tool issue if this baseline also fails |
 | Indian Accent (Vidya) | Phoneme/vowel recognition, fast or stressed-syllable speech, mis-captured names and numbers |
-| Scottish Accent (Chris) | Strong regional pronunciation and vocabulary, dropped consonants, STT word errors on common terms |
-| Chinese Accent (Jay) | Tone and final-consonant recognition, mis-heard digits and entities, over-confirmation |
+| German Accent (Marshal) | Consonant devoicing (final /d/→/t/), vowel shifts, formal phrasing, STT word errors on common terms |
+| Chinese Accent (Ziyu) | Tone and final-consonant recognition, mis-heard digits and entities, over-confirmation |
 | US Southern Accent (Cletus) | Vowel shifts and drawl, contractions, regional phrasing, STT word errors |
 | Nigerian Accent (Kehinde) | Rhythm and stress patterns, vocabulary, mis-captured entities, confirmation loops |
-| Spanish Accent (Lisa) | Vowel/consonant substitutions, code-switching, mis-heard names and numbers |
+| Malaysian Accent (Darryl) | Syllable-timed rhythm, dropped final consonants, mis-captured entities, confirmation loops |
 
 The shared pattern across accents is the same: check whether the STT layer
 mis-transcribes accented speech, whether mis-transcription propagates into wrong

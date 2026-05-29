@@ -56,11 +56,11 @@ baseline so differences come from the accent, not behavior.
 |---|---|---|
 | Standard Customer | (built-in baseline) | Neutral baseline |
 | Indian Accent (Vidya) | `vidya` | Indian |
-| Scottish Accent (Chris) | `chris` | Scottish |
-| Chinese Accent (Jay) | `jay` | Chinese-accented |
+| German Accent (Marshal) | `marshal` | German-accented |
+| Chinese Accent (Ziyu) | `ziyu` | Chinese-accented |
 | US Southern Accent (Cletus) | `cletus` | US Southern |
 | Nigerian Accent (Kehinde) | `kehinde` | Nigerian |
-| Spanish Accent (Lisa) | `lisa` | Spanish-accented |
+| Malaysian Accent (Darryl) | `darryl` | Malaysian |
 
 > **Low concurrency is expected.** All six accent voices are lower-concurrency
 > ElevenLabs voices, and ElevenLabs voice simulations are globally capped per
@@ -171,8 +171,8 @@ fi
 # personas. Accent voices are locale-bound and most do NOT accept en-US, so
 # `coval personas create` rejects the pair with
 # "Voice 'X' does not support language 'Y'". Supported languages per voice:
-#   vidya  en, en-IN     chris  en, en-GB     jay     en, en-GB
-#   cletus en, en-US     lisa   en, en-US     kehinde en (only)
+#   vidya  en, en-IN     marshal en, en-GB    ziyu   en, en-GB
+#   cletus en, en-US     kehinde en (only)    darryl en (only)
 # The one language all six accent voices share is the base "en", so use "en" for
 # every accent persona. A single shared language keeps the accent voice the only
 # variable. (If you specifically want an accent-native locale, map each voice to
@@ -187,11 +187,11 @@ exist (idempotent — never create duplicates):
 # "Persona Name|voice" — the voice is the Coval catalog name.
 ACCENTS=(
   "Indian Accent (Vidya)|vidya"
-  "Scottish Accent (Chris)|chris"
-  "Chinese Accent (Jay)|jay"
+  "German Accent (Marshal)|marshal"
+  "Chinese Accent (Ziyu)|ziyu"
   "US Southern Accent (Cletus)|cletus"
   "Nigerian Accent (Kehinde)|kehinde"
-  "Spanish Accent (Lisa)|lisa"
+  "Malaysian Accent (Darryl)|darryl"
 )
 
 for entry in "${ACCENTS[@]}"; do
@@ -219,8 +219,8 @@ done
 
 Notes:
 
-- The `--voice` value is the lowercase Coval catalog name (`vidya`, `chris`,
-  `jay`, `cletus`, `kehinde`, `lisa`), not the display label.
+- The `--voice` value is the lowercase Coval catalog name (`vidya`, `marshal`,
+  `ziyu`, `cletus`, `kehinde`, `darryl`), not the display label.
 - Use the **same** `--prompt`, the same `--wait-seconds`, and the shared `en`
   language for every accent persona so the accent voice is the only thing that
   changes between runs. Do not pass Standard Customer's `en-US` to an accent
@@ -243,11 +243,11 @@ Customer first so it is the baseline column in the report:
 PERSONA_NAMES=(
   "Standard Customer"
   "Indian Accent (Vidya)"
-  "Scottish Accent (Chris)"
-  "Chinese Accent (Jay)"
+  "German Accent (Marshal)"
+  "Chinese Accent (Ziyu)"
   "US Southern Accent (Cletus)"
   "Nigerian Accent (Kehinde)"
-  "Spanish Accent (Lisa)"
+  "Malaysian Accent (Darryl)"
 )
 
 PERSONA_IDS=()
@@ -366,7 +366,7 @@ numeric metrics — ordered Standard Customer first and **leading with the
 recognition metrics** (Transcription Error, then STT Word Error Rate only if it
 actually scored), then task-outcome judges, then call-shape metrics:
 
-| Metric (direction) | Standard | Indian | Scottish | Chinese | Southern | Nigerian | Spanish |
+| Metric (direction) | Standard | Indian | German | Chinese | Southern | Nigerian | Malaysian |
 |---|---|---|---|---|---|---|---|
 | Transcription Error (lower=better) | 0.04 | 0.03 | 0.02 | 0.03 | 0.04 | 0.03 | 0.03 |
 | Conversation Success (higher=better) | 100% | 80% | 80% | 100% | 100% | 80% | 80% |
@@ -447,14 +447,14 @@ When the skill finishes, return a short, actionable summary:
 |---|---|---|---|---|
 | Standard Customer | (baseline) | … | … | https://app.coval.dev/<org>/runs/<id> |
 | Indian Accent (Vidya) | vidya | … | … | … |
-| Scottish Accent (Chris) | chris | … | … | … |
-| Chinese Accent (Jay) | jay | … | … | … |
+| German Accent (Marshal) | marshal | … | … | … |
+| Chinese Accent (Ziyu) | ziyu | … | … | … |
 | US Southern Accent (Cletus) | cletus | … | … | … |
 | Nigerian Accent (Kehinde) | kehinde | … | … | … |
-| Spanish Accent (Lisa) | lisa | … | … | … |
+| Malaysian Accent (Darryl) | darryl | … | … | … |
 
 **Persona comparison (from Step 8 — recognition metrics first, baseline first):**
-| Metric (direction) | Standard | Indian | Scottish | Chinese | Southern | Nigerian | Spanish |
+| Metric (direction) | Standard | Indian | German | Chinese | Southern | Nigerian | Malaysian |
 |---|---|---|---|---|---|---|---|
 | Transcription Error (↓) | … | … | … | … | … | … | … |
 | <task-outcome judge> (↑) | … | … | … | … | … | … | … |
