@@ -77,6 +77,16 @@ inspect, not as data to ignore. Under heavy accent stress, a judge may be unable
 to score because the call ended early, the transcript is too sparse, or the
 interaction became too anomalous to evaluate.
 
+One specific gap to recognize, not misread: **STT Word Error Rate that is
+`FAILED`/empty on nearly every simulation is a tracing gap, not an accent
+signal.** That metric only computes when the agent's traces carry STT spans with
+a recognized hypothesis and a reference; many voice stacks (Vapi/PSTN especially)
+emit no such spans, so it fails uniformly across all personas including the
+baseline. When that happens, lead recognition with **Transcription Error**
+(audio-derived, needs no traces) and recommend instrumenting STT spans as a
+trace-setup fix — do not report the empty STT WER column as if accents scored
+poorly on it.
+
 ### 3. Inspect Representative Evidence
 
 Open or request representative simulations:

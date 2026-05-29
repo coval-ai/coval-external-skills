@@ -1,6 +1,6 @@
 ---
 name: run-accent-testing
-description: End-to-end Coval accent testing workflow. Creates one persona per accent (each using a distinct accent voice and mirroring your Standard Customer behavior), launches one run per accent against the same voice agent + test set + metrics, polls for completion, and produces the multi-run report URL grouped by Persona. Use when a user wants to follow the Testing Across Accents cookbook (https://docs.coval.dev/guides/testing-across-accents) without doing each step by hand.
+description: End-to-end Coval accent testing workflow. Creates one persona per accent (each using a distinct accent voice and mirroring your Standard Customer behavior), launches one run per accent against the same voice agent + test set + metrics, polls for completion, builds a per-persona comparison table from the results, and produces the multi-run report URL grouped by Persona. Use when a user wants to follow the Testing Across Accents cookbook (https://docs.coval.dev/guides/testing-across-accents) without doing each step by hand.
 argument-hint: "[agent-name-or-id] [test-set-name-or-id]"
 metadata:
   author: coval-ai
@@ -12,9 +12,9 @@ metadata:
 # Run Accent Testing
 
 Set up and launch a Coval accent testing sweep end-to-end: one voice agent, one
-test set, an accent persona pack, shared metrics, and a multi-run report grouped
-by **Persona**. Mirrors the public cookbook at
-https://docs.coval.dev/guides/testing-across-accents.
+test set, an accent persona pack, shared metrics, a per-persona comparison table
+built from the results, and a multi-run report grouped by **Persona**. Mirrors
+the public cookbook at https://docs.coval.dev/guides/testing-across-accents.
 
 Unlike the audio-quality pack, **the accent personas are not built-in**. This
 skill creates them in the user's organization, one per accent voice, and makes
@@ -120,6 +120,16 @@ Do **not** recommend `STT Word Error Rate (Audio Upload)` for this general
 workflow. It only applies when the test set uses uploaded audio with reference
 transcripts, which is a different setup from the normal voice-simulation sweep.
 
+> **STT Word Error Rate needs the right trace spans, or it silently fails.**
+> The trace-based `STT Word Error Rate` metric only computes when the agent's
+> OpenTelemetry traces carry STT spans with both the recognized hypothesis and a
+> reference value. Many voice stacks — Vapi/PSTN agents in particular — do not
+> emit those spans, in which case this metric comes back `FAILED`/empty on
+> nearly every simulation. That is a **trace-setup gap, not an accent finding**.
+> Always include **Transcription Error** (audio-derived word error rate, needs no
+> traces) as the reliable recognition headline, and only rely on `STT Word Error
+> Rate` after you have confirmed it scores on a real run for this agent.
+
 ```bash
 coval metrics list
 ```
@@ -134,25 +144,40 @@ The accent personas are not built-in, so create any that are missing. Make each
 one mirror the org's **Standard Customer** so the only variable is the accent
 voice.
 
-First resolve Standard Customer and read its behavior prompt and language:
+First resolve Standard Customer and read its behavior prompt and wait time so the
+accent personas can mirror them:
 
 ```bash
 STD_ID=$(coval personas list --filter 'name:"Standard Customer"' --format json \
   | jq -r '.[] | select(.name == "Standard Customer") | .id' | head -1)
 
+STD_PROMPT=""
+STD_WAIT=""
 if [ -n "$STD_ID" ]; then
   STD=$(coval personas get "$STD_ID" --format json)
   STD_PROMPT=$(echo "$STD" | jq -r '.persona_prompt // ""')
-  STD_LANG=$(echo "$STD"   | jq -r '.language_code // ""')
+  STD_WAIT=$(echo "$STD"   | jq -r '.wait_seconds // ""')
 fi
 
-# Fallbacks if Standard Customer is missing or has no prompt/language.
-if [ -z "$STD_LANG" ] || [ "$STD_LANG" = "null" ]; then
-  STD_LANG="en-US"
-fi
+# Fallbacks if Standard Customer is missing or has no prompt/wait time.
 if [ -z "$STD_PROMPT" ] || [ "$STD_PROMPT" = "null" ]; then
   STD_PROMPT="You are a standard customer calling in with a routine request. Speak naturally and conversationally. Answer the agent's questions, provide the information it asks for, and work toward completing your task."
 fi
+if [ -z "$STD_WAIT" ] || [ "$STD_WAIT" = "null" ]; then
+  STD_WAIT="0.5"
+fi
+
+# IMPORTANT: do NOT reuse Standard Customer's language code for the accent
+# personas. Accent voices are locale-bound and most do NOT accept en-US, so
+# `coval personas create` rejects the pair with
+# "Voice 'X' does not support language 'Y'". Supported languages per voice:
+#   vidya  en, en-IN     chris  en, en-GB     jay     en, en-GB
+#   cletus en, en-US     lisa   en, en-US     kehinde en (only)
+# The one language all six accent voices share is the base "en", so use "en" for
+# every accent persona. A single shared language keeps the accent voice the only
+# variable. (If you specifically want an accent-native locale, map each voice to
+# a code it supports above instead — but then language co-varies with accent.)
+ACCENT_LANG="en"
 ```
 
 Then create each accent persona only if an exact-name match does not already
@@ -185,8 +210,9 @@ for entry in "${ACCENTS[@]}"; do
   coval personas create \
     --name "$name" \
     --voice "$voice" \
-    --language "$STD_LANG" \
+    --language "$ACCENT_LANG" \
     --prompt "$STD_PROMPT" \
+    --wait-seconds "$STD_WAIT" \
     --format json
 done
 ```
@@ -195,8 +221,14 @@ Notes:
 
 - The `--voice` value is the lowercase Coval catalog name (`vidya`, `chris`,
   `jay`, `cletus`, `kehinde`, `lisa`), not the display label.
-- Reuse the **same** `--prompt` and `--language` for every accent persona so the
-  accent voice is the only thing that changes between runs.
+- Use the **same** `--prompt`, the same `--wait-seconds`, and the shared `en`
+  language for every accent persona so the accent voice is the only thing that
+  changes between runs. Do not pass Standard Customer's `en-US` to an accent
+  voice — most accent voices reject it (see the language note above).
+- `coval personas create` does not expose `conversation_initiation` or
+  `background_sound`, so new personas take the defaults. If your Standard
+  Customer overrides either, the accent personas will differ on that secondary
+  setting — note it, or set those fields in the app for a pixel-perfect mirror.
 - Do not overwrite an existing persona. If one already exists with a different
   voice or prompt, tell the user and let them decide — do not silently recreate.
 
@@ -298,28 +330,94 @@ worker crashed before sub-sampling. Re-launch that single run with
 `--sub-sample-size 1` (or omit subsampling) and report the failure as a Coval
 issue — this has been observed in some orgs.
 
-### Step 8: Build The Multi-Run Report URL
+### Step 8: Build The Persona Comparison Table
 
-Concatenate the seven run IDs and produce the report URL:
+The report URL in Step 9 opens Coval's report builder, but the grouping is a
+manual UI step, so it does not by itself hand the user a comparison. **The user
+asked for a report comparing the personas — produce that comparison here**,
+directly from the API, so they get a ready-to-read artifact without touching the
+app. For every run, list its simulations, pull each simulation's metric values,
+and aggregate per persona:
+
+```bash
+# Map metric_id -> name once (include built-ins like Transcription Error).
+coval metrics list --include-builtin --page-size 100 --format json \
+  | jq -r '.[] | "\(.id)\t\(.metric_name // .name)"' > /tmp/accent_metric_names.tsv
+
+# Gather every simulation's metric values across all runs.
+: > /tmp/accent_metrics.jsonl
+for i in "${!RUN_IDS[@]}"; do
+  run_id="${RUN_IDS[$i]}"
+  persona="${PERSONA_NAMES[$i]}"
+  coval simulations list --run-id "$run_id" --format json \
+    | jq -r '.[].simulation_id' \
+    | while read -r sid; do
+        coval simulations metrics "$sid" --format json \
+          | jq -c --arg p "$persona" --arg s "$sid" \
+              '.[] | {persona:$p, sim:$s, metric_id:.metric_id, status:.status, value:.value}' \
+          >> /tmp/accent_metrics.jsonl
+      done
+done
+```
+
+Then aggregate per persona per metric and print one Markdown table the user can
+read directly — **pass rate** (YES / total) for binary judges, **mean** for
+numeric metrics — ordered Standard Customer first and **leading with the
+recognition metrics** (Transcription Error, then STT Word Error Rate only if it
+actually scored), then task-outcome judges, then call-shape metrics:
+
+| Metric (direction) | Standard | Indian | Scottish | Chinese | Southern | Nigerian | Spanish |
+|---|---|---|---|---|---|---|---|
+| Transcription Error (lower=better) | 0.04 | 0.03 | 0.02 | 0.03 | 0.04 | 0.03 | 0.03 |
+| Conversation Success (higher=better) | 100% | 80% | 80% | 100% | 100% | 80% | 80% |
+| … | | | | | | | |
+
+Rules for the table:
+
+- Mark any metric that is `FAILED`/missing on most simulations as a **measurement
+  gap, not a result** — flag it and exclude it from the regression call-outs.
+  `STT Word Error Rate` is commonly all-`FAILED` when the agent emits no STT
+  trace spans (see Step 3); say so rather than reporting it as 0 or as an accent
+  signal.
+- Call out the largest per-accent deltas vs Standard Customer, but **do not
+  over-read thin samples** — with a small test set each accent run has few
+  simulations, so treat single-case swings as hypotheses to confirm in Step 10,
+  not conclusions.
+- Before blaming the accent, check whether Standard Customer regressed on the
+  same metric/case too. A failure the neutral baseline also hits is an agent,
+  tool, or judge issue, not an accent issue.
+
+### Step 9: Build The Multi-Run Report URL
+
+For the interactive, shareable report, concatenate the run IDs into a
+report-builder URL. Resolve the org slug from the **agent or test-set URL the
+user gave you** (`https://app.coval.dev/<org>/agents/<id>` → `<org>`). `coval
+whoami` does **not** return the slug today, so do not try to parse it from there.
 
 ```bash
 RUN_IDS_CSV=$(IFS=,; echo "${RUN_IDS[*]}")
-ORG_SLUG=$(coval whoami --format json | jq -r '.organization.slug')
+# Set ORG_SLUG from the org segment of the Coval app URL the user pasted, e.g.
+# https://app.coval.dev/acme-co/agents/AbC123  ->  ORG_SLUG=acme-co
+ORG_SLUG="${ORG_SLUG:?set ORG_SLUG to the org slug from the Coval app URL}"
 echo "https://app.coval.dev/${ORG_SLUG}/reports/new?run_ids=${RUN_IDS_CSV}"
 ```
 
-Tell the user to:
+This link opens the report **builder**. The grouping is not encoded in the URL
+(the default Compare-by is None, and there is no query param for it today), so
+tell the user to:
 
 1. Open the URL.
-2. Set **Compare by** to **Persona**.
-3. Save the report with a descriptive name (this preserves the grouping for
-   future viewers).
-4. If they want to share without a Coval login, use the report's **Share**
-   button to publish a shareable link.
+2. Set **Compare by** to **Persona** — this is the grouped view, and it is a
+   manual step.
+3. Save the report with a descriptive name to preserve the grouping.
+4. Use the report's **Share** button for a login-free shareable link.
 
-### Step 9: Hand Off Analysis
+The Step 8 table already gives the user the persona comparison without opening
+the app; this saved report is the interactive, shareable version of the same data.
 
-Once the report is saved, point the user at
+### Step 10: Hand Off Analysis
+
+Once the comparison table and report exist, point the user at
 [analyze-accent-report](../../reports/analyze-accent-report/) for a structured
 next-fix write-up. The analysis skill turns the grouped report into prompt,
 STT/confirmation, routing, or coverage recommendations.
@@ -355,8 +453,17 @@ When the skill finishes, return a short, actionable summary:
 | Nigerian Accent (Kehinde) | kehinde | … | … | … |
 | Spanish Accent (Lisa) | lisa | … | … | … |
 
+**Persona comparison (from Step 8 — recognition metrics first, baseline first):**
+| Metric (direction) | Standard | Indian | Scottish | Chinese | Southern | Nigerian | Spanish |
+|---|---|---|---|---|---|---|---|
+| Transcription Error (↓) | … | … | … | … | … | … | … |
+| <task-outcome judge> (↑) | … | … | … | … | … | … | … |
+| … | | | | | | | |
+
+**Largest deltas vs Standard:** <one line per notable accent delta, or "none — all accents within noise of baseline">. Note any `FAILED`/missing metrics as measurement gaps, and flag small-sample (few-sims-per-accent) conclusions as tentative.
+
 **Multi-run report:**
-https://app.coval.dev/<org>/reports/new?run_ids=<csv> — open and set **Compare by → Persona**, then save.
+https://app.coval.dev/<org>/reports/new?run_ids=<csv> — open and set **Compare by → Persona** (manual; default is None), then save.
 
 **Next step:** run the `analyze-accent-report` skill on the saved report.
 ```
@@ -365,8 +472,15 @@ https://app.coval.dev/<org>/reports/new?run_ids=<csv> — open and set **Compare
 
 - One agent, one test set, same metrics, same subsample seed across all seven
   runs. Any divergence breaks the grouped comparison the report depends on.
-- Make every accent persona mirror Standard Customer's prompt and language. The
-  accent voice must be the only variable, or the comparison is not interpretable.
+- Make every accent persona mirror Standard Customer's prompt and wait time, and
+  give them all the same shared `en` language, so the accent voice is the only
+  variable. Do not copy Standard Customer's `en-US` onto an accent voice — most
+  accent voices reject it; `en` is the one code all six accept.
+- STT Word Error Rate only scores when the agent emits STT trace spans. If it
+  comes back `FAILED`/empty across the sweep, report it as a trace-setup gap and
+  lean on Transcription Error — never present an unscored metric as a result.
+- Always hand the user the Step 8 persona-comparison table. A bare report-builder
+  URL is not the comparison they asked for; the grouped view is a manual UI step.
 - Create accent personas only when an exact-name match is missing. Never create
   duplicates, and never silently overwrite an existing persona.
 - Keep `--concurrency` low and expect queueing — these are lower-concurrency
