@@ -108,7 +108,7 @@ the agent already has attached when they fit.
 
 | Goal | Useful Metrics |
 |---|---|
-| Speech recognition (headline) | STT Word Error Rate for traced agents, or Transcription Error for audio-backed conversations |
+| Speech recognition (headline) | Transcription Error (audio-derived, needs no traces) is the default; add STT Word Error Rate only after confirming the agent emits STT trace spans and the metric actually scores — otherwise it silently fails |
 | Task outcome | Composite evaluation, task-completion LLM judges, or scenario-specific pass/fail metrics |
 | Responsiveness | Latency, time to first audio, trace TTFB, provider response-time |
 | Conversation flow | Turn count, repeated confirmation/clarification loops, early termination, silence, interruption rate |

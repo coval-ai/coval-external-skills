@@ -58,7 +58,7 @@ magnitude for:
 
 | Area | Typical Signals |
 |------|-----------------|
-| Speech recognition (headline) | STT WER from traces, transcription error |
+| Speech recognition (headline) | Transcription Error (audio-derived, always available) is the default; use STT WER from traces only after confirming it actually scored — it silently fails when the agent emits no STT spans |
 | Task outcome | composite score, task completion, scenario-specific pass/fail metrics |
 | Responsiveness | latency, time to first audio, trace TTFB, provider response time |
 | Conversation flow | repeated confirmation/clarification loops, repetition, sentiment, turn timing |
