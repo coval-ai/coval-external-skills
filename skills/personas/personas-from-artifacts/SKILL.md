@@ -34,6 +34,9 @@ coval whoami
 If not authenticated: `coval login` (key at https://app.coval.dev/settings → Organization →
 Manage → API Keys). No account? https://coval.dev.
 
+> **Command name:** examples use `coval` (the Homebrew binary). If `coval` is a shell alias on
+> your machine, use `coval-cli` instead (`which coval` to check).
+
 Inventory in parallel so we extend rather than duplicate:
 ```bash
 coval personas list --format json
@@ -53,6 +56,10 @@ Capture `model_type`:
   behavior **and target language** in the prompt.
 - `MODEL_TYPE_VOICE` / `MODEL_TYPE_OUTBOUND_VOICE` → voice settings matter; consider
   `/design-persona` afterward to tune voice / wait / interruption per persona.
+
+> Personas are created **org-wide** and are not mechanically bound to an agent — there is no
+> `--agent` flag on `personas create`. Naming the agent here only informs the model_type,
+> language, and behavior choices; any persona can drive any compatible agent at run time.
 
 ## Phase 2: Gather Artifacts
 Ask the user to share whatever they have (any subset is fine):
@@ -117,13 +124,18 @@ coval personas create \
   --wait-seconds 0.5 \
   --format json
 ```
-Capture each `persona_id`. Pick `--voice`/`--language` from a valid pair (e.g. `aria`/`en-US`,
-`callum`/`en-US`); for a real voice agent, choose deliberately and consider `/design-persona`
-to tune voice, wait, and interruption rate.
+Capture each `persona_id`. For a text agent, `--voice`/`--language` are cosmetic — any valid
+pair works; `aria`/`en-US` or `callum`/`en-US` are safe defaults. Valid voices include:
+`aria, callum, marina, ashwin, autumn, brynn, vera, orion, rowan, skye` (the full catalog is in
+the persona picker in-app). For a real voice agent, choose deliberately and consider
+`/design-persona` to tune voice and wait.
 
-> **Note:** interruption rate and `conversation_initiation` are not CLI flags. Set them after
-> creation via the API: `PATCH /v1/personas/{id}` with `{"interruption_rate": "LOW"}`, or send
-> `conversation_initiation` via `coval personas create --input-json @persona.json`.
+> **Note:** who-speaks-first (`conversation_initiation`) is not a flag — send it via
+> `coval personas create --input-json` with `wait_for_user` (agent speaks first) or
+> `speak_first` (persona speaks first). Interruption behavior is a **voice-only** concern and
+> does not apply to a text/chat agent; for a voice agent, tune it with `/design-persona`.
+> `--language` is cosmetic for text agents and the API stores it normalized (e.g. `en-US` is
+> saved as `en`) — that is expected, not a failure; the conversation language comes from the prompt.
 
 ## Phase 7: Next Steps
 ```

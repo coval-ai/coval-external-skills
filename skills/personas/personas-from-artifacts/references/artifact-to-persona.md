@@ -64,7 +64,7 @@ BAD:
 | display name | `--name "..."` |
 | valid voice/language placeholder (cosmetic for text agents) | `--voice aria --language en-US` |
 | pause before first message (voice realism) | `--wait-seconds 0.5` |
-| interruption rate (voice) — not a flag | `PATCH /v1/personas/{id}` `{"interruption_rate":"LOW"}` |
+| interruption behavior (voice agents only) | not a simple persona field; tune via `/design-persona` for a voice agent — irrelevant for a text/chat agent |
 | who speaks first — not a flag | `coval personas create --input-json` with `conversation_initiation: "speak_first" | "wait_for_user"` |
 
 Create one persona per archetype in a loop, capture each `persona_id`, and present the set
