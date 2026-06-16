@@ -40,6 +40,10 @@ coval whoami
 ```
 If not authenticated: `coval login` (get a key at https://app.coval.dev/settings → Organization → Manage → API Keys). No account? https://coval.dev.
 
+> **Before you start:** this skill needs only the `coval` CLI and `python3` (used by the
+> bundled script and a couple of small JSON reads) — no `jq` or other tools. If `coval` is a
+> shell alias on your machine, run the commands with `coval-cli` instead (`which coval` to check).
+
 ### Step 2: Inventory existing test sets (so we don't clobber one)
 ```bash
 coval test-sets list --format json
@@ -53,7 +57,7 @@ Determine where the large dataset lives. Two common cases:
 1. **An existing, oversized Coval test set** — use `--source coval:<TEST_SET_ID>` (the script
    pulls every case via the API, paginated). Confirm the id and its size:
    ```bash
-   coval test-sets get <TEST_SET_ID> --format json | python3 -c "import json,sys;d=json.load(sys.stdin);print(d.get('display_name'), d.get('test_case_count'))"
+   coval test-sets get <TEST_SET_ID> --format json | python3 -c "import json,sys;d=json.load(sys.stdin);print(d.get('display_name'), d.get('test_case_count') or '(size shown in app)')"
    ```
 2. **A local file** — CSV, JSON, or NDJSON of past conversations / SME-reviewed rows / logs.
 
@@ -105,7 +109,7 @@ selected / selected_fail / selected_cjk / selected_by_label
 
 Show the user a sample of the distilled set and the label/pass-fail/language breakdown:
 ```bash
-python3 -c "import json;[print('•',json.loads(l)['input_str'][:80]) for l in open('distilled.ndjson')]"
+python3 -c "import json;[print('IN :',json.loads(l)['input_str'][:70],'| EXP:',json.loads(l)['expected_output_str'][:60]) for l in open('distilled.ndjson')]"
 wc -l distilled.ndjson
 ```
 Ask: "Does this coverage look right? (yes / re-run with different size or weighting / edit the file)"
@@ -113,7 +117,11 @@ Ask: "Does this coverage look right? (yes / re-run with different size or weight
 - Too many fallback/greeting rows → lower `--boilerplate-quota`.
 - Want more failure coverage → raise `--fail-weight` or `--target-size`.
 - Want to hand-curate → edit `distilled.ndjson` directly (one JSON object per line:
-  `{"input_str", "expected_output_str", "description"}`).
+  `{"input_str", "expected_output_str", "description"}`). Keep every line valid JSON — the
+  bulk loader stops at the first malformed line, so a stray typo can silently drop the rest.
+- Sanity-check coherence → confirm each `expected_output_str` actually answers its
+  `input_str`. The distiller preserves whatever input/answer pairing your source had, so any
+  misalignment already in the source data carries through (garbage in, garbage out).
 
 **Start small.** A 20–30 case suite you can run and trust beats a 2,000 case suite you
 can't. Get the agent passing these, then add a new test set for the next workflow.
@@ -126,7 +134,7 @@ path that loads exactly the rows you chose (no 10-case generation limit):
 ```bash
 TS=$(coval test-sets create --name "<Agent> — Representative Suite" --type SCENARIO \
   --description "Distilled from <source>: deduped, failure-weighted representative scenarios" \
-  --format json | jq -r '.id')
+  --format json | python3 -c "import json,sys;print(json.load(sys.stdin)['id'])")
 
 cat distilled.ndjson | coval test-cases create --test-set-id "$TS" --stdin
 ```
@@ -135,14 +143,13 @@ cat distilled.ndjson | coval test-cases create --test-set-id "$TS" --stdin
 > `description` optional) and POSTs one test case per line with **no row cap**. This is the
 > fix for "the importer only kept ~10 cases".
 
-> **Note:** `--type` may not be wired in older CLI builds (test sets default to SCENARIO,
-> which is what you want here). If `--type` errors, drop it, or set it via the API:
-> `POST /v1/test-sets` with `{"test_set_type": "SCENARIO"}`.
+> **Note:** `SCENARIO` is the right type for persona-driven eval and is also the CLI default.
+> If an older CLI build rejects `--type`, just omit it (you still get SCENARIO).
 
 ## Phase 5: Verify + Next Steps
 
 ```bash
-coval test-cases list --test-set-id "$TS" --page-size 100 --format json | jq 'length'
+coval test-cases list --test-set-id "$TS" --page-size 100 --format json | python3 -c "import json,sys;print(len(json.load(sys.stdin)))"
 ```
 Confirm the count matches the distilled file, then show the app link:
 `https://app.coval.dev/test-sets/<TS>`
