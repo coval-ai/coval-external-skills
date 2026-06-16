@@ -7,6 +7,7 @@ Skills for building and managing Coval evaluation test cases.
 | Skill | Description |
 |-------|-------------|
 | [build-test-suite](./build-test-suite/) | Interactive guide to build a test suite with scenarios and expected behaviors |
+| [distill-test-set](./distill-test-set/) | Turn a large dataset into a small, deduped, representative test set (failure-weighted) and bulk-load it with no row cap |
 | [huggingface-import](./huggingface-import/) | Import datasets from HuggingFace and convert to Coval test sets |
 
 ## Overview
