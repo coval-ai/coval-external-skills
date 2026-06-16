@@ -7,6 +7,7 @@ Skills for defining simulation personas.
 | Skill | Description |
 |-------|-------------|
 | [design-persona](./design-persona/) | Interactive guide to design a simulation persona with voice, behavior, and environment settings |
+| [personas-from-artifacts](./personas-from-artifacts/) | Derive a set of personas from backend payloads, UI screenshots, and real user messages (best for chat agents) |
 
 ## Overview
 
