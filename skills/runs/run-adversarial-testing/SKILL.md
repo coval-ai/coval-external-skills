@@ -284,6 +284,7 @@ resp=$(coval runs launch \
   --name "Adversarial sweep - $(date +%F)" \
   --format json)
 RUN_ID=$(echo "$resp" | jq -r '.run_id // .id')
+RUN_IDS=("$RUN_ID")   # the scorecard (Step 8) and report (Step 9) span every run in this list
 echo "launched run: $RUN_ID"
 ```
 
@@ -312,23 +313,30 @@ voice sweep to take a while; chat is faster.
 > not a Coval problem. Before re-authoring anything, **re-run the failed scenarios
 > one simulation at a time** (`--concurrency 1`) and see if they pass:
 > ```bash
-> # collect the test cases whose sims failed, then re-run them serially
+> # collect the test cases whose sims failed, then re-run them serially.
+> # IMPORTANT: capture the retry run id and add it to RUN_IDS so Step 8/9 read it.
 > FAILED_TCS=$(coval simulations list --run-id "$RUN_ID" --page-size 200 --format json \
 >   | jq -r '.[] | select(.status=="FAILED") | .test_case_id' | sort -u | paste -sd, -)
 > if [ -n "$FAILED_TCS" ]; then
->   coval runs launch --agent-id "$AGENT_ID" --persona-id "$PID" \
+>   RETRY_RUN_ID=$(coval runs launch --agent-id "$AGENT_ID" --persona-id "$PID" \
 >     --test-set-id "$TEST_SET_ID" --metric-ids "$METRIC_IDS" \
 >     --test-cases "$FAILED_TCS" --iterations "$ITERATIONS" \
 >     --concurrency 1 \
 >     --tags "adversarial,red-team,cookbook,serial-retry" \
->     --name "Adversarial retry (serial) - $(date +%F)" --format json
+>     --name "Adversarial retry (serial) - $(date +%F)" --format json \
+>     | jq -r '.run_id // .id')
+>   RUN_IDS+=("$RETRY_RUN_ID")     # Step 8 + Step 9 now span the original AND the retry run
+>   coval runs watch "$RETRY_RUN_ID"
+>   echo "retry run: $RETRY_RUN_ID"
 > fi
 > ```
 > If the same scenarios pass at `--concurrency 1`, the failures were an agent
-> concurrency limit, not an adversarial finding. Use that serial run for the
-> scorecard, and tell the user their agent has a concurrency ceiling. Only conclude
-> a scenario genuinely failed once it has run cleanly (a real COMPLETED simulation
-> with a transcript), never from a FAILED/timed-out sim.
+> concurrency limit, not an adversarial finding. The retry run is appended to
+> `RUN_IDS`, so the Step 8 scorecard and the Step 9 report read both runs: the
+> original FAILED sims for those scenarios are excluded from scoring and the clean
+> retry sims take their place. Tell the user their agent has a concurrency ceiling.
+> Only conclude a scenario genuinely failed once it has run cleanly (a real COMPLETED
+> simulation with a transcript), never from a FAILED/timed-out sim.
 
 ### Step 8: Build The Per-Scenario Scorecard
 
@@ -340,21 +348,25 @@ across iterations. Pull each simulation's composite value + status, group by
 THRESHOLD=1.0   # match the metric's target_condition (1.0 = all behaviors met)
 
 : > /tmp/adv_results.tsv
-coval simulations list --run-id "$RUN_ID" --page-size 200 --format json \
-  | jq -r '.[] | "\(.simulation_id)\t\(.test_case_id)\t\(.status)"' \
-  | while IFS=$'\t' read -r sid tcid sstatus; do
-      row=$(coval simulations metrics "$sid" --format json \
-        | jq -r --arg m "$MID" '.[] | select(.metric_id == $m) | "\(.status)\t\(.value)"')
-      # Label the scenario by joining test_case_id to its description from the map
-      # file (awk lookup, no bash-4 associative array needed).
-      desc=$(awk -F'\t' -v id="$tcid" '$1==id{print $2}' /tmp/adv_case_labels.tsv)
-      printf '%s\t%s\t%s\n' "$desc" "$sstatus" "$row" >> /tmp/adv_results.tsv
-    done
+for rid in "${RUN_IDS[@]}"; do        # original run, plus the serial retry run if there was one
+  coval simulations list --run-id "$rid" --page-size 200 --format json \
+    | jq -r '.[] | "\(.simulation_id)\t\(.test_case_id)\t\(.status)"' \
+    | while IFS=$'\t' read -r sid tcid sstatus; do
+        row=$(coval simulations metrics "$sid" --format json \
+          | jq -r --arg m "$MID" '.[] | select(.metric_id == $m) | "\(.status)\t\(.value)"')
+        # Label the scenario by joining test_case_id to its description from the map
+        # file (awk lookup, no bash-4 associative array needed).
+        desc=$(awk -F'\t' -v id="$tcid" '$1==id{print $2}' /tmp/adv_case_labels.tsv)
+        printf '%s\t%s\t%s\n' "$desc" "$sstatus" "$row" >> /tmp/adv_results.tsv
+      done
+done
 ```
 
 Then aggregate per scenario (mean composite value, pass = value >= THRESHOLD, plus a
 count of iterations that passed) and print one Markdown table the user reads
-directly.
+directly. **Score only clean COMPLETED sims**: if a scenario was re-run serially, its
+original FAILED rows are excluded (flag them "not evaluated"), so the scorecard
+reflects the clean retry result, not the contention failure.
 
 > **The composite's per-criterion MET/NOT_MET breakdown is not exposed over the
 > public API/CLI** - `simulations metrics` and `metric-detail` return the aggregate
@@ -378,10 +390,13 @@ grouped by Test Case** - each adversarial vector becomes its own scorecard row.
 
 ```bash
 ORG_SLUG="${ORG_SLUG:?set ORG_SLUG to the org slug from your app.coval.dev URL}"
+# Include every run in RUN_IDS (original + any serial retry); compare_by test_case
+# merges them so each scenario is one row regardless of which run produced it.
+RUN_IDS_JSON=$(printf '%s\n' "${RUN_IDS[@]}" | jq -R . | jq -s -c .)
 resp=$(curl -s -X POST "https://api.coval.dev/v1/reports" \
   -H "x-api-key: $COVAL_API_KEY" -H "content-type: application/json" \
-  -d "$(jq -nc --arg name "Adversarial sweep - $(date +%F)" --arg r "$RUN_ID" \
-        '{name: $name, run_ids: [$r], compare_by: "test_case"}')")
+  -d "$(jq -nc --arg name "Adversarial sweep - $(date +%F)" --argjson run_ids "$RUN_IDS_JSON" \
+        '{name: $name, run_ids: $run_ids, compare_by: "test_case"}')")
 REPORT_ID=$(echo "$resp" | jq -r '.report.id // empty')
 if [ -n "$REPORT_ID" ]; then
   echo "Saved report: https://app.coval.dev/${ORG_SLUG}/reports/${REPORT_ID}"
@@ -399,7 +414,8 @@ also marks the included run public).
 and have the user group + save by hand:
 
 ```bash
-echo "https://app.coval.dev/${ORG_SLUG}/reports/new?run_ids=${RUN_ID}"
+RUN_IDS_CSV=$(IFS=,; echo "${RUN_IDS[*]}")
+echo "https://app.coval.dev/${ORG_SLUG}/reports/new?run_ids=${RUN_IDS_CSV}"
 # Open it, set Compare by -> Test Case, then Save.
 ```
 
