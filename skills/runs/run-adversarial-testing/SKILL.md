@@ -252,7 +252,7 @@ under-samples. Tag the run so it is easy to find.
 
 ```bash
 ITERATIONS=3
-CONCURRENCY=5     # lower for voice agents on lower-concurrency voices
+CONCURRENCY=5     # start moderate; some agents cannot handle parallel sessions (see note)
 resp=$(coval runs launch \
   --agent-id "$AGENT_ID" \
   --persona-id "$PID" \
@@ -267,6 +267,14 @@ RUN_ID=$(echo "$resp" | jq -r '.run_id // .id')
 echo "launched run: $RUN_ID"
 ```
 
+> **Concurrency depends on the agent, not just Coval.** Some agents cannot handle
+> many simultaneous sessions: a single-tenant phone number, a dev/prototype server,
+> a rate-limited model behind the agent, or a backend that serializes calls. When an
+> agent is overloaded, its simulations fail or hang even though the test set and
+> metric are fine. Start at a moderate concurrency, but be ready to drop to **1**
+> (one simulation at a time) for fragile agents. If you already know the agent is a
+> low-capacity or prototype endpoint, set `CONCURRENCY=1` from the start.
+
 ### Step 7: Watch For Completion
 
 ```bash
@@ -276,6 +284,31 @@ coval runs watch "$RUN_ID"
 `coval runs watch` blocks until the run reaches a terminal status (COMPLETED,
 FAILED, CANCELLED). With 10 scenarios × 3 iterations = 30 simulations, expect a
 voice sweep to take a while; chat is faster.
+
+> **If simulations fail, suspect agent concurrency before anything else.** When
+> several simulations come back FAILED (no transcript, connection/timeout/transport
+> errors, or sims that never started) while the test set, persona, and metric are
+> valid, the most common cause is the **agent could not handle the parallel load**,
+> not a Coval problem. Before re-authoring anything, **re-run the failed scenarios
+> one simulation at a time** (`--concurrency 1`) and see if they pass:
+> ```bash
+> # collect the test cases whose sims failed, then re-run them serially
+> FAILED_TCS=$(coval simulations list --run-id "$RUN_ID" --page-size 200 --format json \
+>   | jq -r '.[] | select(.status=="FAILED") | .test_case_id' | sort -u | paste -sd, -)
+> if [ -n "$FAILED_TCS" ]; then
+>   coval runs launch --agent-id "$AGENT_ID" --persona-id "$PID" \
+>     --test-set-id "$TEST_SET_ID" --metric-ids "$METRIC_IDS" \
+>     --test-cases "$FAILED_TCS" --iterations "$ITERATIONS" \
+>     --concurrency 1 \
+>     --tags "adversarial,red-team,cookbook,serial-retry" \
+>     --name "Adversarial retry (serial) — $(date +%F)" --format json
+> fi
+> ```
+> If the same scenarios pass at `--concurrency 1`, the failures were an agent
+> concurrency limit, not an adversarial finding. Use that serial run for the
+> scorecard, and tell the user their agent has a concurrency ceiling. Only conclude
+> a scenario genuinely failed once it has run cleanly (a real COMPLETED simulation
+> with a transcript), never from a FAILED/timed-out sim.
 
 ### Step 8: Build The Per-Scenario Scorecard
 
@@ -402,6 +435,9 @@ https://app.coval.dev/<org>/reports/<id> — opens already grouped per scenario.
   errors. Write each behavior as one observable, binary statement.
 - Do not present SKIPPED/UNKNOWN as a pass. A sparse or failed simulation is evidence
   to inspect, not a green check.
+- Do not read a FAILED/timed-out simulation as an adversarial finding. Failures often
+  mean the agent could not handle the concurrency. Re-run the failed scenarios at
+  `--concurrency 1` first; only score a scenario from a clean COMPLETED simulation.
 - Reuse existing resources when they match (list-before-create). Never silently
   overwrite an existing test set, persona, or metric.
 - Do not invent agent, test set, persona, or metric IDs — always resolve them from
