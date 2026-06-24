@@ -11,6 +11,7 @@ Skills for launching and monitoring Coval evaluation runs.
 | [quick-eval](./quick-eval/) | Full workflow: launch, watch, and summarize results |
 | [run-audio-quality-testing](./run-audio-quality-testing/) | End-to-end audio-quality testing sweep — one run per audio-robustness persona, then a multi-run report grouped by Persona |
 | [run-accent-testing](./run-accent-testing/) | End-to-end accent testing sweep — creates one persona per accent voice (mirroring Standard Customer), one run each, then a multi-run report grouped by Persona |
+| [run-adversarial-testing](./run-adversarial-testing/) | End-to-end adversarial / red-team sweep — builds an adversarial test set (~10 bad-actor scenarios with expected-behavior checklists), a Composite Evaluation metric, a multi-iteration run (voice or chat), a per-scenario scorecard, and a report grouped by Test Case |
 
 ## Overview
 
