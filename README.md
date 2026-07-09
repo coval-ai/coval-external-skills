@@ -20,7 +20,7 @@ This repository contains reusable skills for interacting with Coval's evaluation
 | [Metrics](./skills/metrics/) | Configure evaluation metrics and scoring |
 | [Traces](./skills/traces/) | Configure, enrich, measure, and debug OpenTelemetry traces |
 | [Migrations](./skills/migrations/) | Migrate from other testing platforms |
-| [Covi](./skills/covi/consult-covi/) | Delegate read-only Coval FDE analysis to Covi from an external coding agent |
+| [Covi](./skills/covi/) | Delegate read-only Coval FDE analysis to Covi from an external coding agent |
 
 ## Quick Start
 
