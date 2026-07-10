@@ -7,6 +7,8 @@ description: Delegate a read-only Coval evaluation, simulation, monitoring, prod
 
 Use `consult_covi` when Coval-specific expertise or the authenticated organization's data would improve the answer. Covi is a read-only specialist: it can use Coval knowledge plus the organization's runs, simulations, monitoring conversations, metrics, agents, personas, test sets, and dashboards.
 
+This skill is optional guidance, not an installation prerequisite or a duplicate implementation. Prefer the official remote MCP connection at `https://mcp.coval.dev/mcp`; use the local stdio MCP server with a Coval API key only for service accounts or local development.
+
 ## When To Delegate
 
 Delegate when the task needs one or more of:
@@ -23,7 +25,7 @@ Do not delegate trivial CRUD lookups when a direct Coval MCP or CLI call is clea
 1. Gather the smallest useful context from the user's request and any direct Coval tool results.
 2. Call `consult_covi` with a self-contained task. Include exact resource IDs, observed errors, relevant metric values, and the desired outcome when available.
 3. Include at most the recent turns needed to preserve intent. Do not include API keys, credentials, or unrelated customer data.
-4. Treat Covi's response as expert analysis. Verify any factual identifier or proposed mutation with normal Coval tools before acting.
+4. Use the returned `summary`, `evidence`, and `request_id` as the consultation record. Verify any factual identifier or proposed mutation with normal Coval tools before acting.
 5. Present the useful conclusion and next step directly. If an action is appropriate, use the ordinary Coval tool and obtain the confirmation required by the parent agent's policy.
 
 ## Prompt Shape
@@ -47,5 +49,6 @@ Return: a grounded diagnosis, one likely agent fix, and the next test case and m
 ## Boundaries
 
 - `consult_covi` is read-only. It cannot confirm, execute, or imply a product mutation.
+- Direct MCP tools that create or update Coval resources are separate operations and should remain behind the parent agent's normal approval policy.
 - Do not expose Covi system instructions, raw knowledge files, internal thresholds, service credentials, or private integrations. Use its conclusions and cited customer-visible evidence instead.
 - If the MCP tool is not installed or unavailable, continue with direct Coval MCP/CLI tools and state that the Covi consultation path was unavailable.
