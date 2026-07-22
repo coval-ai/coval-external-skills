@@ -28,6 +28,22 @@ Do not delegate trivial CRUD lookups when a direct Coval MCP or CLI call is clea
 4. Use the returned `summary`, `evidence`, and `request_id` as the consultation record. Verify any factual identifier or proposed mutation with normal Coval tools before acting.
 5. Present the useful conclusion and next step directly. If an action is appropriate, use the ordinary Coval tool and obtain the confirmation required by the parent agent's policy.
 
+Every field in the consultation contract is required:
+
+```typescript
+{
+  contract_version: "1";
+  request_id: string;
+  mode: "read_only";
+  summary: string;
+  evidence: Array<{ name: string; status: string }>;
+  proposed_actions: [];
+}
+```
+
+Reject or report a malformed response instead of guessing missing fields. `proposed_actions` must
+remain empty because Sofia cannot mutate Coval resources through this tool.
+
 ## Prompt Shape
 
 ```text
