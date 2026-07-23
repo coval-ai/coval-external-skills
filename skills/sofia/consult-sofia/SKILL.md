@@ -62,14 +62,6 @@ Constraint: do not modify any resources.
 Return: a grounded diagnosis, one likely agent fix, and the next test case and metric to add.
 ```
 
-## Migration
-
-Sofia was previously named Covi, and early connector builds exposed `consult_covi`. Prefer
-`consult_sofia`, reconnect to refresh tool discovery, and update saved prompts or allowlists that
-name the previous tool. If only the legacy tool is available, it may be used temporarily with the
-same read-only boundary; do not treat the two names as separate assistants or install a duplicate
-connector.
-
 ## Boundaries
 
 - `consult_sofia` is read-only. It cannot confirm, execute, or imply a product mutation.
