@@ -26,8 +26,15 @@ coval whoami
 If not authenticated, run `coval login` (get an API key at
 https://app.coval.dev/settings under Organization > Manage > API Keys).
 
-For raw API fallback, resolve the key in this order: `coval config get api-key`,
-then `~/.config/coval/config.json`, then the `COVAL_API_KEY` env var.
+Transcript fetching (Step 2) calls the raw API, so also resolve the API key
+into `$KEY` — without ever printing it:
+
+```bash
+KEY=${COVAL_API_KEY:-$(sed -nE 's/^api_key *= *"?([^"]+)"?.*/\1/p' ~/.config/coval/config.toml 2>/dev/null)}
+```
+
+(`coval config get api_key` returns a masked value — do not use it. The real
+key lives in the `COVAL_API_KEY` env var or the CLI's config.toml.)
 
 ## Step 1: Resolve Input
 
@@ -37,20 +44,23 @@ then `~/.config/coval/config.json`, then the `COVAL_API_KEY` env var.
   `coval simulations get <id> --format json` first; if not found, treat it as
   a run ID.
 
-**Run path**: the simulations list endpoint does not include transcripts, so
-fetch each simulation's detail individually:
+**Run path**: list the run's simulation IDs (CLI is fine for listing):
 
 ```bash
 coval simulations list --run-id <run_id> --format json
 ```
 
-Then for each simulation ID, save the detail JSON to a temp directory:
+Then fetch each simulation's detail **via the raw API** into a temp directory:
 
 ```bash
-coval simulations get <sim_id> --format json > <tmpdir>/<sim_id>.json
+curl -s -H "X-API-Key: $KEY" "https://api.coval.dev/v1/simulations/<sim_id>" > <tmpdir>/<sim_id>.json
 ```
 
-Raw API fallback: `curl -s -H "X-API-Key: $KEY" https://api.coval.dev/v1/simulations/<sim_id>`
+**Do not fetch details with `coval simulations get`** — the CLI returns a
+slimmed transcript (role/content only, no timestamps or tool-call fields),
+which makes latency computation impossible. The script detects this and
+reports `TRANSCRIPT_MISSING_TIMING` with a refetch hint; if you see that
+status, this is why.
 
 For runs with more than 20 simulations, tell the user how many you are
 fetching. Include FAILED/empty simulations — the script counts them as

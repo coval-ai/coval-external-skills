@@ -24,6 +24,9 @@ Simulation statuses:
     OK             at least one DTMF event found
     NO_DTMF        transcript present but no DTMF tool-call turns
     NOT_ANALYZABLE no transcript (failed / empty simulation)
+    TRANSCRIPT_MISSING_TIMING  transcript lacks timestamps/tool-call fields
+                   (typically fetched via the coval CLI, which slims the
+                   transcript — refetch via the raw API)
 """
 
 import argparse
@@ -184,6 +187,19 @@ def main():
         if transcript is None:
             entry["status"] = "NOT_ANALYZABLE"
             entry["events"] = []
+        elif transcript and not any(
+            "start_time" in t or "is_tool_call" in t
+            for t in transcript if isinstance(t, dict)
+        ):
+            # Slimmed transcript (role/content only) — the coval CLI strips
+            # timing and tool-call fields. Refetch via the raw API.
+            entry["status"] = "TRANSCRIPT_MISSING_TIMING"
+            entry["events"] = []
+            entry["hint"] = (
+                "transcript has no timestamps or tool-call fields; fetch this "
+                "simulation via GET https://api.coval.dev/v1/simulations/{id} "
+                "(X-API-Key header) instead of the coval CLI"
+            )
         else:
             events = extract_events(transcript)
             if args.digits:
@@ -250,6 +266,9 @@ def main():
             "simulations_no_dtmf": sum(1 for s in sims_out if s["status"] == "NO_DTMF"),
             "simulations_not_analyzable": sum(
                 1 for s in sims_out if s["status"] == "NOT_ANALYZABLE"
+            ),
+            "simulations_missing_timing": sum(
+                1 for s in sims_out if s["status"] == "TRANSCRIPT_MISSING_TIMING"
             ),
             "outlier_cutoff": round(outlier_cutoff, 2) if outlier_cutoff else None,
         },
