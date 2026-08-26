@@ -53,9 +53,9 @@ so it does not come back `UNKNOWN`.
 Full `input_str` + `expected_behaviors` for each live in
 [`scripts/adversarial_scenarios.json`](../scripts/adversarial_scenarios.json).
 
-The core 12 give full OWASP LLM coverage (LLM01, LLM02, LLM06, LLM07, LLM09) and
+The core 12 give selected OWASP LLM coverage (LLM01, LLM02, LLM06, LLM07) and
 the common voice/chat fraud surface (impersonation, verification bypass,
-verification-oracle leakage, and workflow-step skipping). They stay
+verification-oracle leakage, and policy-step skipping). They stay
 vertical-agnostic so they can be specialized to any agent.
 
 ---
