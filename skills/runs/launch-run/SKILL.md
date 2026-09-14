@@ -1,81 +1,33 @@
 ---
 name: launch-run
-description: Launch a Coval evaluation run against an AI agent. Use when user wants to start an evaluation, test an agent, or run simulations.
-argument-hint: "[agent-name-or-id] [test-set-name-or-id]"
+description: Launch a specific Coval evaluation with explicit cases and execution bounds. Use when resources are already selected; for result analysis use quick-eval.
+argument-hint: "[agent] [test-set]"
 ---
 
-# Launch Coval Evaluation Run
+# Launch a Coval run
 
-Launch an evaluation run for `$ARGUMENTS`.
+Use `quick-eval` when installed; it covers planning, bounded execution and the
+result audit. Do not bypass its session budget when invoked from that workflow.
+If this skill is installed alone, follow the same minimum launch contract:
 
-## Prerequisites
+1. Confirm the intended organization, workspace and API environment. Read the
+   agent, persona, exact cases and selected metric definitions. Check command
+   help and errors. Authentication is not proof of tenant identity.
+2. Prepare a structured launch request with explicit `options.test_case_ids`,
+   iteration count, concurrency, metric IDs and a verified per-call duration
+   limit. Count cases × iterations × (1 + mutation count), per persona, including
+   any prior runs in the session. Concurrency does not reduce total cost.
+3. Show the concrete plan and bounded stopping condition. A request to plan or
+   inspect is not paid-run authority; honor already granted execution authority
+   and ask only when scope/budget must expand. Default to proposing one call for
+   an untested connection, not the entire test set.
+4. Execute `coval --agent runs launch --input-json @run.json`. Check `ok` and
+   exit status. Save the returned run ID. If the response is ambiguous, inspect
+   matching runs before retrying; never blindly retry a launch.
+5. Return the run ID and actual observed status. Queued is not completed. Follow
+   the user's requested scope: for a completed evaluation, poll and audit results
+   as in `quick-eval`; for launch-only, hand back the run without claiming quality.
 
-Ensure the Coval CLI is installed and authenticated:
-```bash
-coval whoami
-```
-
-If not authenticated, run `coval login` first.
-
-## Workflow
-
-### Step 1: Identify Resources
-
-If agent or test set not specified, list available options:
-
-```bash
-coval agents list
-coval test-sets list
-coval personas list
-```
-
-Ask user to select:
-- **Agent**: Which agent to evaluate
-- **Test Set**: Which test cases to run
-- **Persona**: Which simulated user persona
-
-### Step 2: Configure Run Options
-
-Ask about optional parameters:
-
-| Option | Flag | Default |
-|--------|------|---------|
-| Iterations per test case | `--iterations` | 1 |
-| Concurrent simulations | `--concurrency` | 5 |
-| Run name | `--name` | Auto-generated |
-| Mutation (A/B variant) | `--mutation-id` | None |
-
-### Step 3: Launch
-
-```bash
-coval runs launch \
-  --agent-id <agent_id> \
-  --persona-id <persona_id> \
-  --test-set-id <test_set_id> \
-  --iterations <n> \
-  --concurrency <n> \
-  --name "Descriptive Run Name"
-```
-
-### Step 4: Confirm
-
-Report the run ID and status. Offer to watch progress:
-
-> Run launched: `<run_id>`
-> Status: IN QUEUE
->
-> Would you like me to watch the progress?
-
-If yes, use `coval runs watch <run_id>`.
-
-## Example
-
-```bash
-coval runs launch \
-  --agent-id abc123 \
-  --persona-id xyz789 \
-  --test-set-id ts456 \
-  --iterations 3 \
-  --concurrency 10 \
-  --name "Q1 Regression Test"
-```
+Use the current [runs schema](https://api.coval.dev/v1/openapi/runs). Do not use
+`/eval/*`, invent command flags, add schedules, change agent defaults, or rerun
+unattended. A local plan is not a server-enforced spending cap.
