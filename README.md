@@ -154,13 +154,6 @@ These check execution arithmetic, pagination/scoping and calibration edge cases.
 negative paths. They supplement actual customer-API voice testing; neither a
 Markdown validator nor a synthetic fixture certifies an agent or LLM judge.
 
-## Acknowledgments
-
-The maturity-aware evaluation workflow was informed by
-[Hamel Husain and Shreya Shankar's evals-skills](https://github.com/ai-evals-course/evals-skills).
-Coval's collection uses its own resources, recordings, review projects, metric
-outputs and bounded voice execution. It does not require their plugin.
-
 ## License
 
 MIT License - see [LICENSE](./LICENSE) for details.
