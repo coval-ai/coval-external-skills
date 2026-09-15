@@ -1,211 +1,109 @@
 ---
 name: build-test-suite
-description: >
-  Build a complete test suite with test set and test cases for evaluating an AI
-  agent. Guides through test set type selection, scenario design using
-  vertical-specific templates, expected behavior crafting, and bulk creation.
-  Use when user says "create test cases", "build test suite", "add test
-  scenarios", "set up evaluation tests", or "design test cases".
-argument-hint: "[agent-name-or-use-case]"
+description: Build a compact Coval test set from product requirements, observed conversation failures or a coverage gap. Design realistic scenarios with separate expected behaviors, provenance and controlled voice/persona variation.
+argument-hint: "[agent-or-failure-mode]"
 ---
 
-# Build Test Suite
+# Build a useful Coval test suite
 
-Guide the user through building a complete test suite — test set + test cases with expected behaviors — for evaluating an AI agent using the `coval` CLI. Follow the phases below in order, asking questions at each step.
+Create tests that change a product decision. A small set covering distinct
+failure mechanisms is more useful than many paraphrases of a happy path.
 
-If `$ARGUMENTS` contains an agent name or use case, use it to skip or pre-fill questions in Phases 1-2.
+## Understand and reuse
 
-## Phase 0: Setup + Preflight
+Confirm organization/workspace, agent and scope. Inspect the selected agent,
+existing cases, relevant recordings and the customer's source-of-truth policy.
+Use `coval --agent agents get <id>`, `test-sets get`, and `test-cases list
+--test-set-id <id>`. Check command help, errors and pagination. Do not replace
+an existing suite or derive requirements solely from a buggy agent prompt.
 
-### Step 1: Check authentication
+For a large corpus, `distill-test-set` can help shortlist source rows; inspect
+its resulting input/expectation pairs. For unexplored conversations, use
+`coval-discover-failures`. Neither is mandatory when the requirement is known.
 
-```bash
-coval whoami
-```
+## Design the coverage before prose
 
-If not authenticated, guide the user:
-```bash
-coval login
-```
-This prompts for an API key. Get one at https://app.coval.dev/settings (Organization > Manage > API Keys).
+Make a compact matrix with: requirement or observed failure, source, meaningful
+variation, scenario, expected behaviors, evidence needed, and risk/priority.
+Distinguish observed failure, policy requirement and synthetic hypothesis.
 
-If the user doesn't have a Coval account, direct them to https://coval.dev to sign up.
+Choose axes that could alter behavior: ambiguous request, changed information,
+missing tool result, unsupported request, caller correction, or a relevant audio
+condition. Avoid an automatic Cartesian product. Generate combinations first,
+then realistic caller scenarios; discard impossible combinations and semantic
+duplicates. Preserve a few untouched cases for later regression checks.
 
-### Step 2: Inventory existing resources
+For voice, separate scenario from persona and audio condition. Start with normal
+audio; vary accent/noise/interruption only for a stated hypothesis. Don't put
+sensitive real customer details in synthetic cases. Keep examples fictional
+and realistic for the customer's supported language and workflow.
 
-Run these in parallel:
+Example for a clinic whose published hours are Monday–Friday, 8am–5pm:
 
-```bash
-coval agents list --format json
-coval test-sets list --format json
-```
+| Case | Scenario for the caller | Expected agent behavior | Source |
+|---|---|---|---|
+| Hours | Ask when the clinic closes on Friday; thank them and end after the answer | Says 5pm on Friday | Office policy |
+| Closed day | Ask whether the clinic is open Sunday; don't suggest an answer | States it is closed Sunday; doesn't invent Sunday hours | Office policy |
+| Correction | Ask about Thursday, then correct yourself to Friday | Answers the corrected day | Hypothesized repair failure |
 
-Note existing agents and test sets for reference throughout the flow.
+This verifies information, not that an appointment was persisted.
 
-## Phase 1: Agent Context
+## Make expectations evaluable
 
-Ask: "Which agent are these tests for?"
+Write each mandatory behavior as a separate array item. State the relevant
+precondition and observable outcome. Avoid “helpful,” arbitrary numeric scores,
+or requiring a particular phrase when a correct paraphrase is acceptable.
 
-- If agents exist, present a numbered list and let the user pick or say "new"
-- If `$ARGUMENTS` matches an agent name, select it automatically
+Don't leak the answer through `input_str` or persona instructions. A scenario
+sets the caller's goal, not the agent's response. Choose the input mode from the
+current test-case spec: SCENARIO for flexible interaction; SCRIPT only when exact
+caller turns matter. Do not call generated dialogue real production evidence.
 
-Fetch the selected agent's details:
+Use transcript evidence for conversation behavior, audio for acoustic behavior,
+and correlated tool results for actual side effects. If the evidence cannot
+support a criterion, revise it or flag the instrumentation gap before scoring.
 
-```bash
-coval agents get <agent_id> --format json
-```
+## Create and read back
 
-Capture from the response:
-- `agent_id`
-- `model_type` (voice, chat, etc.)
-- `prompt` (system prompt, if available)
-- `display_name`
-
-If the agent has a system prompt, use it later to generate more specific, domain-relevant test scenarios instead of generic templates.
-
-## Phase 2: Test Set Type Selection
-
-Load `references/test-set-types.md` and present the available types.
-
-Ask: "What type of test set do you want to create?"
-
-- **SCENARIO** is the default and best for most use cases
-- Explain when each type is appropriate based on the reference
-- If the user is unsure, recommend SCENARIO
-
-> **Note:** Test set type is not configurable via the CLI — all test sets default to SCENARIO type. To create other types, use the API: `POST /v1/test-sets` with a `test_set_type` field.
-
-Then ask:
-1. "What would you like to name this test set?" — suggest: `"<Agent Name> Evaluation"`
-2. "Brief description?" — suggest based on agent type and use case
-
-Create the test set:
+Prepare the exact cases locally before asking for any missing write authority.
+Respect creation already authorized in the conversation. Use structured JSON
+rather than interpolating customer prose into shell strings:
 
 ```bash
-coval test-sets create --name "<name>" --description "<desc>" --format json
+coval --agent test-sets create --input-json @test-set.json
+coval --agent test-cases create --input-json @case.json
 ```
 
-Capture `test_set_id` from the JSON response.
+`test-set.json` uses the public API shape:
 
-## Phase 3: Scenario Design
-
-Load `references/test-case-templates.md` and select the templates matching the agent's vertical/use case.
-
-Present the 3-category pattern:
-- **happy_path** — The standard, successful interaction
-- **edge_case** — Unusual or challenging situations
-- **compliance** — Regulatory, policy, or safety requirements
-
-If the agent has a system prompt, customize the scenarios to be specific to the agent's domain rather than using generic templates. For example, if the agent handles dental appointments, tailor scenarios to dental-specific situations.
-
-Present a summary table before creating:
-
-```
-Test Set: "<name>"
-
-  [happy_path]   <test case name>
-                 <scenario description>
-  [edge_case]    <test case name>
-                 <scenario description>
-  [compliance]   <test case name>
-                 <scenario description>
+```json
+{"display_name":"Clinic information checks","test_set_type":"SCENARIO"}
 ```
 
-Ask: "Create these test cases? (yes / customize / add more)"
+After obtaining the actual test-set ID, `case.json` is:
 
-- **yes** → proceed to Phase 4
-- **customize** → let the user edit scenarios, then re-present
-- **add more** → generate additional scenarios, then re-present
-
-## Phase 4: Expected Behaviors
-
-For each test case, help craft an `expected_behaviors` array. These are what the Composite Evaluation metric scores against.
-
-**Good expected behaviors are:**
-- Specific — describes a concrete action or output
-- Observable — can be verified from the conversation transcript
-- Binary — it either happened or it didn't
-
-**Examples of GOOD expected behaviors:**
-- "Agent verifies caller identity before sharing account details"
-- "Agent provides a confirmation number"
-- "Agent offers at least two alternative time slots"
-- "Agent does NOT share information from a different policy"
-
-**Examples of BAD expected behaviors (avoid these):**
-- "Agent is helpful" — too vague
-- "Agent sounds nice" — subjective
-- "Agent handles the situation well" — not observable
-
-Present each test case with its expected behaviors for confirmation. Let the user add, remove, or edit behaviors.
-
-## Phase 5: Bulk Creation
-
-Create each test case:
-
-```bash
-coval test-cases create \
-  --test-set-id <test_set_id> \
-  --input '<scenario text>' \
-  --expected "Agent greets the customer professionally" \
-  --expected "Agent verifies caller identity" \
-  --expected "Agent resolves the issue or escalates" \
-  --description "<test case name>" \
-  --format json
+```json
+{
+  "test_set_id":"<returned-id>",
+  "input_str":"Ask when the clinic closes on Friday. After the answer, thank them and end the conversation.",
+  "expected_behaviors":["The assistant states that the clinic closes at 5pm on Friday."],
+  "description":"Friday closing time; source: office policy",
+  "input_type":"SCENARIO"
+}
 ```
 
-Pass each expected behavior as a separate `--expected` flag. This ensures they are stored as individual items in the `expected_behaviors` array, which the Composite Evaluation metric scores individually.
+Check `coval test-cases create --help` and the current
+[test-cases schema](https://api.coval.dev/v1/openapi/test-cases) before creation.
+A CLI lacking structured input can use the documented public API. Check every
+response before creating the next item; on ambiguous timeouts inspect existing
+resources before retrying to avoid duplicates. Read every created case back
+and verify its input and **individual** expected behaviors. Confirm the count
+using pagination when necessary.
 
-> **Shell tip:** Use single quotes for `--input` values to avoid shell interpolation issues (e.g., `$45.99` becoming `.99`).
+## Handoff
 
-If the CLI does not support multiple `--expected` flags, use the Coval API directly for structured expected behaviors:
-
-```bash
-curl -s -X POST https://api.coval.dev/v1/test-cases \
-  -H "X-API-Key: $COVAL_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "test_set_id": "<test_set_id>",
-    "input_str": "<scenario text>",
-    "expected_behaviors": [
-      "Agent greets the customer professionally",
-      "Agent verifies caller identity",
-      "Agent resolves the issue or escalates"
-    ],
-    "description": "<test case name>"
-  }'
-```
-
-Present progress as each test case is created. Capture `test_case_id` from each response.
-
-## Phase 6: Coverage Summary + Next Steps
-
-Present what was created:
-
-```
-Test Suite Complete!
-
-  Test Set:     <name> (<test_set_id>)
-  Test Cases:   <N> total
-    [happy_path]   <count>
-    [edge_case]    <count>
-    [compliance]   <count>
-```
-
-### Coverage Analysis
-
-Review the test cases and suggest areas that might need more coverage:
-- Are there common failure modes not covered?
-- Are there regulatory requirements specific to the vertical?
-- Would the agent benefit from multi-turn conversation tests?
-- Are there language/accent scenarios worth testing (for voice agents)?
-
-### Suggested Next Steps
-
-- Design a test persona: `/design-persona`
-- Configure evaluation metrics: `/configure-metrics`
-- Launch a quick evaluation: `/quick-eval`
-- Add more test cases later:
-  ```bash
-  coval test-cases create --test-set-id <test_set_id> --input "..." --expected "..." --description "..."
-  ```
+Show the coverage matrix, IDs and untested gaps. Keep source distribution
+separate from intentionally overweighted failure cases. Creating a suite does
+not authorize running it. Propose an explicit small subset for `quick-eval`,
+with counts including iterations, personas and base + mutations. Use
+`configure-metrics` to turn appropriate criteria into a provisional measure.

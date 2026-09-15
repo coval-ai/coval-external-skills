@@ -1,6 +1,7 @@
 ---
 name: run-adversarial-testing
-description: End-to-end Coval adversarial / red-team testing workflow. Builds one adversarial test set (12 core attack vectors plus legitimate controls, each with an expected-behavior checklist), creates a persistent "Adversarial User" persona and a Composite Evaluation metric that scores each scenario against its own expected behaviors, launches a multi-iteration run against the agent (voice or chat), polls for completion, builds a per-scenario pass/fail scorecard, and creates a saved report grouped by Test Case. Use when a user wants to follow the Adversarial & Red-Team Testing cookbook (https://docs.coval.dev/guides/adversarial-red-team-testing) without doing each step by hand. Triggers: "adversarial test set", "red team my agent", "jailbreak / prompt-injection testing", "test my agent against bad actors".
+description: >
+  End-to-end Coval adversarial / red-team testing workflow. Builds one adversarial test set (12 core attack vectors plus legitimate controls, each with an expected-behavior checklist), creates a persistent "Adversarial User" persona and a Composite Evaluation metric that scores each scenario against its own expected behaviors, launches a multi-iteration run against the agent (voice or chat), polls for completion, builds a per-scenario pass/fail scorecard, and creates a saved report grouped by Test Case. Use when a user wants to follow the Adversarial & Red-Team Testing cookbook (https://docs.coval.dev/guides/adversarial-red-team-testing) without doing each step by hand. Triggers: "adversarial test set", "red team my agent", "jailbreak / prompt-injection testing", "test my agent against bad actors".
 argument-hint: "[agent-name-or-id]"
 metadata:
   author: coval-ai
