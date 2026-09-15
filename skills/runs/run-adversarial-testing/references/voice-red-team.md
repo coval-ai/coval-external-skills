@@ -21,6 +21,24 @@ test case, persona, metric versions, run IDs, repetition, and condition. Explain
 expected volume and respect the user's existing authorization. Start with modest
 concurrency, then inspect actual execution failures before increasing it.
 
+## Validate the recording before scaling
+
+Check a clean and a stressed smoke call for each agent integration before
+launching the larger matrix. A completed call and populated metrics are not
+sufficient. Compare the greeting, a middle exchange, and the final audible reply
+with the saved transcript; include a call that reaches the configured duration
+limit. Check speaker attribution, separate replies, and speech near shutdown.
+One assistant entry spanning several intervening caller turns is a warning to
+investigate against the recording, not a very long opening monologue.
+
+If recording or transcript integrity fails, pause dependent evaluation and mark
+affected review projects and reports provisional. Preserve original evidence and
+metric versions. Verify the fix with fresh calls before resuming; any recovery
+from audio must disclose its transcription source and estimated timing. Refresh
+all dependent metrics and derived data after an approved repair. Do not compare
+alignment percentages across silently changed transcripts or describe an
+ASR-assisted check as human listening.
+
 ## Define success before generating calls
 
 - Name the protected boundary: disclosure, unsupported promise, wrong account,
