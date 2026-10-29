@@ -63,6 +63,13 @@ Use transcript evidence for conversation behavior, audio for acoustic behavior,
 and correlated tool results for actual side effects. If the evidence cannot
 support a criterion, revise it or flag the instrumentation gap before scoring.
 
+Before configuration writes, inspect the repository for Terraform ownership. If
+these resources are managed as code, use the installed `coval-evals-as-code` skill
+or the repository's declared workflow to edit and plan the change; do not bypass
+it with the direct CLI creates/updates below. Read-only inspection and design
+guidance still apply. If the skill is absent, continue from the existing Terraform
+configuration and public provider docs rather than assuming a sibling skill path.
+
 ## Create and read back
 
 Prepare the exact cases locally before asking for any missing write authority.

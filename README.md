@@ -24,6 +24,7 @@ Install the collection, then ask your coding agent:
 | [quick-eval](skills/runs/quick-eval/SKILL.md) | You want to run selected cases | Explicit execution bounds and a complete result audit |
 | [coval-calibrate-metric](skills/evaluation/coval-calibrate-metric/SKILL.md) | You need to trust a judge's scores | Human-label error rates, uncertainty and held-out validation |
 | [coval-compare-runs](skills/evaluation/coval-compare-runs/SKILL.md) | You changed the agent | Matched before/after evidence and visible regressions |
+| [coval-evals-as-code](skills/evaluation/coval-evals-as-code/SKILL.md) | You maintain evaluation configuration in Git/Terraform | Imports, reviewed edits, stable history and isolated candidate runs |
 | [coval-eval-audit](skills/evaluation/coval-eval-audit/SKILL.md) | You already have an eval setup | Prioritized findings about what its results can support |
 
 A first voice run starts small: one case, one persona, one iteration, concurrency
@@ -57,7 +58,7 @@ validation. Existing Coval Human Review is preferred over building another UI.
 
 ```bash
 # Install Coval skills into your chosen Agent Skills-compatible coding agent
-npx skills add coval-ai/coval-external-skills --skill coval-eval-start onboard coval-discover-failures build-test-suite configure-metrics quick-eval coval-calibrate-metric coval-compare-runs coval-eval-audit
+npx skills add coval-ai/coval-external-skills --skill coval-eval-start onboard coval-discover-failures build-test-suite configure-metrics quick-eval coval-calibrate-metric coval-compare-runs coval-eval-audit coval-evals-as-code
 
 # Install the Coval CLI
 brew install coval-ai/tap/coval
@@ -68,11 +69,11 @@ coval login
 # Then ask your coding agent to use coval-eval-start
 ```
 
-To install only the recommended starter collection, select the nine skills above
+To install only the recommended starter collection, select the ten skills above
 in the installer, or use its explicit skill selector:
 
 ```bash
-npx skills add coval-ai/coval-external-skills --skill coval-eval-start onboard coval-discover-failures build-test-suite configure-metrics quick-eval coval-calibrate-metric coval-compare-runs coval-eval-audit
+npx skills add coval-ai/coval-external-skills --skill coval-eval-start onboard coval-discover-failures build-test-suite configure-metrics quick-eval coval-calibrate-metric coval-compare-runs coval-eval-audit coval-evals-as-code
 ```
 
 Choose the target agent and project/global installation scope in the installer.
@@ -150,6 +151,8 @@ python3 -m unittest discover -s tests -v
 ```
 
 These check execution arithmetic, pagination/scoping and calibration edge cases.
+The [evaluations-as-code example](skills/evaluation/coval-evals-as-code/references/example.md)
+also has pinned Terraform mock-provider checks in CI; those make no API writes.
 [The behavioral scenarios](tests/behavioral-scenarios.md) exercise judgment and
 negative paths. They supplement actual customer-API voice testing; neither a
 Markdown validator nor a synthetic fixture certifies an agent or LLM judge.

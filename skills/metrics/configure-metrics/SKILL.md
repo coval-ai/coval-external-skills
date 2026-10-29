@@ -9,6 +9,13 @@ argument-hint: "[criterion-or-agent]"
 Start with what the customer needs to know, not a preset list of metrics.
 One criterion should produce an actionable signal tied to available evidence.
 
+Before configuration writes, inspect the repository for Terraform ownership. If
+these resources are managed as code, use the installed `coval-evals-as-code` skill
+or the repository's declared workflow to edit and plan the change; do not bypass
+it with the direct CLI creates/updates below. Read-only inspection and design
+guidance still apply. If the skill is absent, continue from the existing Terraform
+configuration and public provider docs rather than assuming a sibling skill path.
+
 ## 1. Define the measurement
 
 Confirm organization/workspace, target agent and requirement. Inspect a few

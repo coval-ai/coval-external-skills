@@ -10,6 +10,13 @@ Guide the user through connecting and configuring a new Coval agent for evaluati
 
 If `$ARGUMENTS` contains an agent name or URL, use it to pre-fill the relevant field and skip that question.
 
+Before configuration writes, inspect the repository for Terraform ownership. If
+these resources are managed as code, use the installed `coval-evals-as-code` skill
+or the repository's declared workflow to edit and plan the change; do not bypass
+it with the direct CLI creates/updates below. Read-only inspection and design
+guidance still apply. If the skill is absent, continue from the existing Terraform
+configuration and public provider docs rather than assuming a sibling skill path.
+
 ## Phase 0: Preflight
 
 ### Step 1: Check authentication
