@@ -1,0 +1,35 @@
+name: Test evaluations as code example
+
+on:
+  pull_request:
+    paths:
+      - 'skills/evaluation/coval-evals-as-code/**'
+      - '.github/workflows/test-evals-as-code.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'skills/evaluation/coval-evals-as-code/**'
+      - '.github/workflows/test-evals-as-code.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: skills/evaluation/coval-evals-as-code/examples/terraform
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        with:
+          terraform_version: '1.14.6'
+          terraform_wrapper: false
+      - run: terraform fmt -check -recursive
+      - run: terraform init -backend=false -input=false -lockfile=readonly
+      - run: terraform validate
+      - run: terraform test

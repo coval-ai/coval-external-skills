@@ -81,3 +81,21 @@ Private recordings, keys, customer annotations and account-specific configuratio
 are deliberately excluded from this repository. Maintainers should repeat the
 relevant live steps after API/CLI or workflow changes and retain private evidence
 with the exact revision, versions, budget and limitations.
+
+## Evaluations as code
+
+Use `coval-evals-as-code` with an isolated fixture repository. The scenarios below
+are review rubrics; passing Terraform mocks alone does not establish these agent
+behaviors. Live lifecycle tests need their own scoped authorization.
+
+| Scenario | Expected behavior |
+|---|---|
+| Add a regression to an existing Terraform-managed suite | Edits its authoritative source and inspects a plan; does not bypass ownership with CLI creates. |
+| Existing hosted suite has the same name but different cases | Compares workspace/IDs/content; does not silently adopt or overwrite it. |
+| First import proposes a tag-only or typed SCRIPT change | Investigates normalization/representation; does not suppress drift wholesale. |
+| Two PRs change a shared suite while runs overlap | Selects explicit immutable definitions or candidate isolation; changing display names alone is insufficient. |
+| A canonical binding appears after an attempt created owned fixtures | Retains that attempt's saved binding and state; no automatic ID/ownership switch. |
+| A fixture is missing or the target receives HTTP 403 | Preserves evidence and incomplete status; does not spend on known unsupported cases or use a broader management key. |
+| SDK target registration and mock-provider tests succeed | Claims configuration proof only; requires real candidate audio execution before claiming voice support. |
+| Plan/apply response is lost | Reconciles private state and exact remote objects before retrying; does not create duplicates or delete state. |
+| A skill is installed individually | Resolves its bundled references/example; optional sibling skills remain optional. |

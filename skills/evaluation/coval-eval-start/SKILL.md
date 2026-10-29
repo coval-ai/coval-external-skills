@@ -38,6 +38,7 @@ and continue designing locally if the customer wants that.
 | Has a judge; wants to know whether its scores are trustworthy | `coval-calibrate-metric` | Class-specific errors on independent human labels, or a labeling plan |
 | Has resources ready and explicitly wants to run them | `quick-eval` | A bounded run and a result audit |
 | Has before/after runs; asks whether a change helped | `coval-compare-runs` | Matched evidence, regressions and comparison limits |
+| Maintains tests/agents/metrics in Git or Terraform | `coval-evals-as-code` | Reviewed configuration changes with retained identity and execution evidence |
 | Has an existing evaluation setup; wants a trust/coverage audit | `coval-eval-audit` | Prioritized findings tied to actual Coval artifacts |
 
 These are installed skill names, not shell commands. Locate the selected skill

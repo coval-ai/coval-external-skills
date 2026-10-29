@@ -1,0 +1,39 @@
+{
+  "metric": {
+    "description": "Check each expected behavior independently against the conversation.",
+    "metric_type": "METRIC_COMPOSITE_EVALUATION",
+    "criteria_source": "test_case",
+    "criteria_path": "expected_behaviors",
+    "reporting_method": "all_criteria_met"
+  },
+  "suites": {
+    "clinic/development": {
+      "required_capabilities": ["clinic_policy_fixture"],
+      "cases": [
+        {
+          "case_id": "friday_hours",
+          "source": "Fictional clinic policy: Friday closes at 5pm.",
+          "script_turns": ["When do you close on Friday?", "Thank you, goodbye."],
+          "expected_behaviors": ["States that the clinic closes at 5pm on Friday."]
+        },
+        {
+          "case_id": "day_correction",
+          "source": "Fictional clinic policy: Thursday closes at 4pm; Friday closes at 5pm.",
+          "script_turns": ["When do you close on Thursday?", "Sorry, I meant Friday.", "Thank you, goodbye."],
+          "expected_behaviors": ["After the correction, states Friday's 5pm closing time rather than Thursday's 4pm."]
+        }
+      ]
+    },
+    "clinic/held_out": {
+      "required_capabilities": ["clinic_policy_fixture"],
+      "cases": [
+        {
+          "case_id": "closed_sunday",
+          "source": "Fictional clinic policy: closed on Sunday.",
+          "script_turns": ["Are you open on Sunday?", "Thank you, goodbye."],
+          "expected_behaviors": ["States that the clinic is closed on Sunday."]
+        }
+      ]
+    }
+  }
+}
