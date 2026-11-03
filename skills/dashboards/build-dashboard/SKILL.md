@@ -8,6 +8,24 @@ argument-hint: "[dashboard-purpose-or-name]"
 
 Build a data-driven dashboard for `$ARGUMENTS`. This skill analyzes the user's existing runs and metrics to create a dashboard populated with real data — never an empty shell.
 
+## Choose the purpose first: demo snapshot or ongoing operations
+
+For a customer demo, benchmark, launch evaluation or same-day experiment, use **snapshot mode**. This mode takes precedence over the rolling-seven-day, time-series-density, mandatory-latency and full-rebuild defaults below. Multiple runs within one bucket do not establish an operational trend. For ongoing monitoring, continue with the operational workflow below.
+
+### Snapshot mode
+
+- Reuse the user's stated target and approved design. Do not repeat create/improve or layout questions already answered. Inventory the exact workspace, adopt an existing owned dashboard by recorded ID, and preserve unrelated widgets/history. Create a new dashboard only when requested or absent; do not delete all widgets as a routine update.
+- Freeze the intended comparison cohort: organization/workspace, source, agent versions, run/simulation IDs, original/recovery attempts, timestamps and metric-specific scored counts. Inspect actual values; missing inventory entries and completed runs are not sufficient proof of scored data. Preserve execution failures and UNKNOWN separately.
+- Save an **absolute date default** covering that cohort, with supported agent/case/metadata filters as needed. Reopen the canonical dashboard URL without start/end parameters to prove persistence. A rolling default can age out even though historical data still exists; do not launch more calls merely because the default window is empty. New paid evaluations require the applicable authorization.
+- Use roughly 6–8 concise widgets: a plain-text introduction, 2–3 per-agent score cards with n, a horizontal comparison/top list, a categorical outcome distribution, and a short guide to deeper reports/notebooks. Adapt metrics to the business question; include latency only with useful scored data. Use whole-range comparisons rather than time buckets. Mean partial-credit scores are not all-criteria pass rates; show the actual unit and successful-label meaning.
+- Keep binary pass rates and categorical counts distinct. Preserve UNKNOWN as a category. Use readable display names such as “Appropriate handoff” while retaining the raw value. Keep standard deviation/box plots only when useful to the reader. Verify that percentage formatting actually scales floats; otherwise label 0–1 scores explicitly.
+- If widgets share one global date range and cannot isolate comparison and realism independently, keep realism in a separate report/notebook and point readers there. Do not mix populations to fill charts. Use clear customer language without presenter coaching or internal links.
+- Use the currently verified SDK/CLI contract or supported Sofia/native UI workflow. The October 2026 Sofia builder did not expose saved date defaults or every native display/filter field; finish those in the editor. Never invent unsupported action fields or treat a proposal as execution. Save IDs before retrying uncertain writes.
+- Retain a portable specification (logical references, cohort, calculations, labels, layout intent) and separate live bindings/readback/UI receipts in the customer repository. Partial widget identities are not a full configuration export or proof of autonomous reconstruction. Derive fresh dates and results on a new customer build.
+- Verify nonempty rendering, independent counts/values, fixed-date reopening, exact drilldown IDs and readable layout. Inspect automatic insight narratives against metric semantics as well as checking numbers. A reversed pass/fail interpretation remains a product defect; do not alter scores to fit it or call it customer-ready merely because the chart is correct. Capture visual proof.
+
+Use the creation/configuration commands below only after confirming their current contract. Their operational chart and blanket rebuild defaults do not override snapshot mode. Finish with direct workspace-scoped dashboard/report links, the actual sample sizes and any unresolved limitations; do not automatically recommend more spending or scheduled runs for a completed demo snapshot.
+
 ## Phase 0: Preflight + Usage Analysis
 
 ### Step 1: Check authentication
