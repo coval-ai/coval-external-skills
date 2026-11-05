@@ -70,6 +70,12 @@ an opening greeting in addition to the scripted user turns. Include its spend in
 the study total and label startup overhead. Do not subtract that call to claim a
 production counterfactual: it may prime later cache and conversation history.
 
+A failed transport delivery can still contain billable target work and multiple
+request attempts, even when no user dialogue was saved. Join the failed simulation
+to target receipts/traces before treating its spend as unavailable or zero. Keep
+those operational failures in the study denominator while separating unavailable
+quality evidence.
+
 Inspect saved per-criterion outcomes and their unknown counts, not only a metric's
 number or configured presentation. Preserve a raw fractional score separately
 from any derived all-mandatory-criteria pass rule. A transcript-only judge can call
