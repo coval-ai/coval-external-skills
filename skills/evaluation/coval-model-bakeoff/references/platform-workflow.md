@@ -43,8 +43,63 @@ effective models, case/persona/fixture/metric versions, split assignments,
 launch payloads and IDs, run links, limits, schedule/retries, counts and evidence.
 Exclude secrets, signed URLs, Terraform state and sensitive raw interactions
 from public artifacts. Track only owned process IDs and start times during local
-target cleanup; unrelated process arguments can expose credentials. Read every result page and verify scope. A shared seed
-can select cases; it does not make conversations deterministic.
+target cleanup; unrelated process arguments can expose credentials. Read every
+result page and verify scope. A shared seed can select cases; it does not make
+conversations deterministic.
+
+## Additional scoring and output history
+
+Before rescoring a large cohort, test the metric on a few saved outputs with
+known expected behavior and verify its runtime prerequisites. A failed
+conversation can contain valid trace expense yet be ineligible for a metric
+that requires a completed simulation. Treat `SKIPPED` as terminal, retain its
+reason, and leave the value unavailable. Do not replace it with zero or present
+a receipt-derived value as a native metric result.
+
+Discover the current `conversations/simulated:rerunMetrics` contract and pass only
+the intended metric IDs. A metrics-only request can also refresh automatic
+measurements. Snapshot existing output IDs, versions and full values before the
+request; afterward verify the requested additions, unchanged primary scores and
+any automatic refreshes. A changed latest-output pointer does not necessarily
+mean historical evidence was deleted. Read the original output ULIDs and disclose
+the side effects, including whether refreshed values and versions agree.
+
+Test-metric executions can use an `INTERNAL` trigger that ordinary conversation
+views hide. A not-found response on a conversation metric route is therefore not
+proof that the test failed or its output vanished. The public
+`metrics/outputs:batchGet` operation reads saved outputs by their returned ULIDs,
+including test outputs; its HTTP POST is a read, not another scoring admission.
+Verify scope, exact output/version IDs, terminal status and runtime metadata.
+Save admission intent before non-idempotent scoring calls and reconcile uncertain
+responses instead of submitting the whole batch again.
+
+## Prepare native human review when needed
+
+If automated judges fail qualification, preserve their outputs and prepare an
+authorized Human Review project rather than manufacturing human labels. Select
+a useful development panel, link its applicable metric criteria, leave labels
+blank, and explain that the panel does not estimate population prevalence.
+Use the requested reviewers and notification settings; creating a review queue
+does not authorize contacting additional people.
+
+Enable the actual native Blind Review setting when machine-score blindness is
+required. An empty `blind_labeling_shown_metric_ids` list alone does not enable
+it. Read back the setting or verify the deployed UI; model names can remain in
+transcripts or traces, so distinguish machine-score blindness from model
+blinding. Blind review and enforced disagreement notes can be incompatible;
+preserve the intended priority and request evidence notes without claiming an
+unsupported combination.
+
+An API-created project can promote its sole reviewer to manager. Managers may
+be excluded from aggregate progress by default even while their direct
+assignments remain reviewable. Check assignments and saved labels separately
+from aggregate counters. Use a supported progress-inclusion setting when
+available; do not demote the last manager or add an unwanted reviewer to fix a
+counter. Source code or a schema alone does not prove that a newer control is
+deployed. Report the gap when the public API or live UI lacks it. Zero progress
+is neither completed human labeling nor evidence that no work was assigned.
+
+## Reports and notebooks
 
 Inspect `reports create`, `get` and `rows` help/schema before saving. A report
 is a view over run evidence, not proof of comparability. Identify arms and

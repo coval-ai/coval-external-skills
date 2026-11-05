@@ -97,6 +97,30 @@ trace-context metadata and a failed trace selector are not proof that stored
 traces are absent; inspect the actual scoped read-back. Tool argument spans alone
 do not establish the exact payload returned by the tool.
 
+Include designed positive and negative controls when qualifying a judge, along
+with real saved development outputs. All-positive examples cannot establish
+whether the judge detects violations. Check prohibition polarity, alternative
+requirements, quoted actors versus the current assistant, and factual assertions
+inside assistant-authored drafts. Missing tool results can make exact-ID or
+numerical grounding unknown even when tool calls succeeded. Conversely, absent
+traces need not prevent judging a speech-only criterion from a complete
+transcript. Preserve disagreements and unknowns; a running evaluator is not a
+validated evaluator. Keep an unqualified judge out of broad grading and do not
+tune it to held-out outcomes. Agent-written control labels are not human
+calibration or population accuracy estimates.
+
+Check the exact request/response mapping across turns. An adapter that forwards
+only assistant text can drop top-level action proposals, cards or tool results
+from later model history. Verify that stateful follow-ups receive the evidence
+the production surface provides; otherwise report the fidelity gap separately
+from observed model wording and first-turn tool behavior.
+
+Keep target connectivity and scheduling in the experimental record. Local host
+network gaps, tunnel reconnects and changed concurrency can distort observed
+latency; classify their failures separately and qualify timing comparisons by
+phase and matched case. Stable target hosting and first-token instrumentation
+are separate production qualification work when they are absent from the study.
+
 ## Analysis and presentation
 
 Match case content and compatible persona conditions. Keep requested, terminal,
