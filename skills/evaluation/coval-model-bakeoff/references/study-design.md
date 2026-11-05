@@ -56,6 +56,41 @@ ratio needs the matching subset's outcomes and a selection-bias caveat. Suppress
 whole-study cost rankings until coverage is comparable, or provide justified
 bounds accounting for missing calls and prices.
 
+## Checks learned from live integrations
+
+Inspect the provider's complete numerical usage categories. Cache-write tokens
+may be separate from cached reads and ordinary input; legacy retention settings
+may differ from billing write TTL. Partition overlapping categories using current
+official billing rules. Preserve whether TTL came from provider metadata, an
+explicit request, or a verified default. A missing native price entry does not
+mean a new model is free.
+
+Count actual target requests as well as visible dialogue. A simulator can request
+an opening greeting in addition to the scripted user turns. Include its spend in
+the study total and label startup overhead. Do not subtract that call to claim a
+production counterfactual: it may prime later cache and conversation history.
+
+Inspect saved per-criterion outcomes and their unknown counts, not only a metric's
+number or configured presentation. Preserve a raw fractional score separately
+from any derived all-mandatory-criteria pass rule. A transcript-only judge can call
+real but unfamiliar resource names invented; verify actual tool receipts and
+independent scoped facts before classifying that as an agent regression. A
+trace-aware judge remains provisional until its own errors are measured.
+
+Verify actual stored trace fields and complete span counts. Export acceptance is
+not read-back proof; fixtures must mirror the supported wire schema. Check the
+installed configuration provider as well as live API schemas: an older provider
+may support a custom trace equivalent while lacking a newer built-in metric type.
+
+Qualify each expensive evaluator on saved pilot outputs before attaching it to
+hundreds of conversations. A terminal metric can still return UNKNOWN because its
+own context or tool budget is exhausted. Preserve that output as an evaluation
+failure; it is not an agent failure. Exclude unqualified diagnostics from the
+broad batch, or version a bounded replacement and validate it separately. Runtime
+trace-context metadata and a failed trace selector are not proof that stored
+traces are absent; inspect the actual scoped read-back. Tool argument spans alone
+do not establish the exact payload returned by the tool.
+
 ## Analysis and presentation
 
 Match case content and compatible persona conditions. Keep requested, terminal,

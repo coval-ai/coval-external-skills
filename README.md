@@ -59,7 +59,7 @@ validation. Existing Coval Human Review is preferred over building another UI.
 
 ```bash
 # Install Coval skills into your chosen Agent Skills-compatible coding agent
-npx skills add coval-ai/coval-external-skills --skill coval-eval-start onboard coval-discover-failures build-test-suite configure-metrics quick-eval coval-calibrate-metric coval-compare-runs coval-eval-audit coval-evals-as-code
+npx skills add coval-ai/coval-external-skills --skill coval-eval-start onboard coval-discover-failures build-test-suite configure-metrics quick-eval coval-calibrate-metric coval-compare-runs coval-model-bakeoff coval-eval-audit coval-evals-as-code
 
 # Install the Coval CLI
 brew install coval-ai/tap/coval
@@ -70,11 +70,11 @@ coval login
 # Then ask your coding agent to use coval-eval-start
 ```
 
-To install only the recommended starter collection, select the ten skills above
+To install only the recommended starter collection, select the eleven skills above
 in the installer, or use its explicit skill selector:
 
 ```bash
-npx skills add coval-ai/coval-external-skills --skill coval-eval-start onboard coval-discover-failures build-test-suite configure-metrics quick-eval coval-calibrate-metric coval-compare-runs coval-eval-audit coval-evals-as-code
+npx skills add coval-ai/coval-external-skills --skill coval-eval-start onboard coval-discover-failures build-test-suite configure-metrics quick-eval coval-calibrate-metric coval-compare-runs coval-model-bakeoff coval-eval-audit coval-evals-as-code
 ```
 
 Choose the target agent and project/global installation scope in the installer.
