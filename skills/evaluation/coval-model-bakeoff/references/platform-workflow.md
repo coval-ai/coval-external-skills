@@ -42,7 +42,8 @@ Keep a private manifest with scope/budget, source/config digests, per-arm
 effective models, case/persona/fixture/metric versions, split assignments,
 launch payloads and IDs, run links, limits, schedule/retries, counts and evidence.
 Exclude secrets, signed URLs, Terraform state and sensitive raw interactions
-from public artifacts. Read every result page and verify scope. A shared seed
+from public artifacts. Track only owned process IDs and start times during local
+target cleanup; unrelated process arguments can expose credentials. Read every result page and verify scope. A shared seed
 can select cases; it does not make conversations deterministic.
 
 Inspect `reports create`, `get` and `rows` help/schema before saving. A report
@@ -50,6 +51,13 @@ is a view over run evidence, not proof of comparability. Identify arms and
 grouping using supported fields. Default to private: the CLI warns that PUBLIC
 reports also mark underlying runs public. Honor an authorized request to publish
 a sanitized comparison after verifying that the exposed data is in scope.
+
+Verify the grouping key on actual report rows. Metadata saved on a run may not
+be propagated to its conversations; a saved metadata configuration can therefore
+render no groups. When supported, use explicit custom dimensions whose simulation
+memberships come from validated run attestations. Include failed simulations and
+keep unassigned rows visible. Read the report revision/ETag and use `If-Match` for
+view patches, then read back both memberships and the rendered grouped view.
 
 Notebook authoring may not be exposed in public OpenAPI. Use an authorized editor
 or first-party UI. Read-only assistant delegation does not authorize notebook
