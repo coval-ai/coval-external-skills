@@ -115,11 +115,27 @@ from later model history. Verify that stateful follow-ups receive the evidence
 the production surface provides; otherwise report the fidelity gap separately
 from observed model wording and first-turn tool behavior.
 
+Treat the simulator as part of the system under test. Persona locale may take
+precedence over language requests in scenario prose. Verify saved user utterances
+and transition order: later corrections can collapse into the first turn. Use an
+independently versioned literal-script companion to separate target behavior from
+simulator fidelity. Preserve original failures and label revised personas or
+companions as protocol amendments. Combined locale and staging repairs do not
+isolate the effect of either setting.
+
 Keep target connectivity and scheduling in the experimental record. Local host
 network gaps, tunnel reconnects and changed concurrency can distort observed
 latency; classify their failures separately and qualify timing comparisons by
 phase and matched case. Stable target hosting and first-token instrumentation
 are separate production qualification work when they are absent from the study.
+
+When recovery changes runtime conditions, define affected whole-case blocks and
+repeat the same cases and repetitions across every arm. Select replacements by
+the declared infrastructure rule, not their observed answers. Preserve separate
+original and clean comparison views, with exact membership and recovery reasons.
+Total operational expense includes both original attempts and recovery; do not
+present clean-cohort spend as the full cost of the study. A recovered comparison
+still needs its own checks for configuration, timing and outcome comparability.
 
 ## Analysis and presentation
 
