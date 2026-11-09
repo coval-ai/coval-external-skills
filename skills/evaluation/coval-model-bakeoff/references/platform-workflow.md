@@ -119,6 +119,14 @@ or first-party UI. Read-only assistant delegation does not authorize notebook
 writes. Verify the document saved and opens in presentation mode. A local
 outline is a fallback deliverable, not a platform notebook.
 
+Before promising embedded plots, verify a supported, deployed way to ingest and
+retain private assets. A renderer accepting an asset reference does not establish
+an upload capability; source-only or internal routes are not a public API. A
+public-URL media form also does not establish durable private storage. Keep
+sensitive figures private. If supported private ingestion is unavailable, use
+native tables in the saved presentation and provide a private export containing
+the figures. State that embedding remains unavailable and verify both deliverables.
+
 ## Synthetic planning example
 
 24 independent scenarios, one compatible persona assigned to each, three model
