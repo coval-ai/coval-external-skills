@@ -56,6 +56,30 @@ ratio needs the matching subset's outcomes and a selection-bias caveat. Suppress
 whole-study cost rankings until coverage is comparable, or provide justified
 bounds accounting for missing calls and prices.
 
+## Outcome and provenance coverage
+
+Show response coverage, evaluable quality judgments, verified completion and
+answer accuracy separately. A fluent final answer establishes response coverage;
+successful customer work needs the relevant action receipt or independently checked
+state. Answer accuracy needs available supporting facts. Keep unobserved results
+unknown, and show denominators including failures and abandoned conversations.
+Report evaluable-subset quality with its coverage rather than generalizing it to
+all assigned users or all agent capabilities.
+
+Keep assigned, requested and provider-reported model identities distinct. A
+configured client or selected fallback records intent, not the model a provider
+actually served. If the response does not identify it, served identity is unknown.
+Record attempted calls even when they fail before usage or a response arrives;
+those attempts belong in reliability denominators without invented cost or tokens.
+An HTTP success can wrap a failed stream or inner operation, so inspect terminal
+application outcomes as well as transport status.
+
+Use the responding service's own release/source provenance. Do not fill its version
+from another service's environment variable or the latest repository commit.
+Missing runtime version stays unknown until a serving-process/image check supports
+it. Show unknown provenance and missing or unpriced usage counts per arm; estimates
+with incomplete coverage do not establish a whole-study cost ranking.
+
 ## Checks learned from live integrations
 
 Inspect the provider's complete numerical usage categories. Cache-write tokens
@@ -108,6 +132,14 @@ transcript. Preserve disagreements and unknowns; a running evaluator is not a
 validated evaluator. Keep an unqualified judge out of broad grading and do not
 tune it to held-out outcomes. Agent-written control labels are not human
 calibration or population accuracy estimates.
+
+Blind the judge's evidence projection, not just the final score display. Allowlist
+the task, user-visible dialogue and necessary scoped tool results; omit model,
+provider, experiment arm, cost, timing and release labels unless a criterion needs
+them. Inspect retained free text and trace attributes for identity leaks. Preserve
+an immutable private link to the complete source evidence and the projection
+version, so sanitization does not destroy auditability. Native machine-score
+blindness alone does not establish model-blind grading.
 
 Check the exact request/response mapping across turns. An adapter that forwards
 only assistant text can drop top-level action proposals, cards or tool results

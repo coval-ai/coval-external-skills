@@ -139,3 +139,44 @@ another six unless explicitly added. Stop at agreed bounds and reconcile
 uncertain launches before retrying.
 
 This is execution arithmetic, not evidence that an integration or agent passed.
+
+## Moving to an authorized live cohort experiment
+
+A personal or staff-only model flag can prove that person's path works while
+remaining incapable of enrolling ordinary users. Inspect both flag targeting and
+server authorization before proposing a customer percentage. Browser flags or
+caller-supplied model headers are not model authority. Evaluate using an
+authenticated stable user identity on the server; if another service consumes the
+decision, use the existing verified server context or a bounded signed assignment.
+Bind it to the applicable user and scope, validate supported settings, and record
+an assignment/version. Document identity mapping and keep allocation stable across
+token refreshes, sessions and retries according to the declared study unit.
+
+For equal control/treatment variants, a common setup enrolls 100% of the eligible
+population with 50/50 variant weights. A separate 50% enrollment gate followed by
+50/50 variants yields only 25% treatment. Verify the platform's actual semantics.
+Half of eligible users does not imply half of conversations. Explicit customer
+configuration can take precedence and exclude enrollment; personal forced overrides
+need their own selection reason. Retain assigned-arm outcomes for intention-to-treat
+analysis and show a per-protocol view excluding overrides; never silently move a
+treatment fallback into control. Missing, disabled or failed evaluation is unassigned
+unless the declared protocol explicitly establishes a valid control assignment.
+
+Token issuance or flag evaluation is assignment, not model exposure. Link a unique
+turn/call exposure to actual invocation, and retain failed invocation attempts.
+Record assigned arm, selection reason, requested configuration, provider-reported
+identity when available, fallback use and service revision. Keep high-cardinality
+user and request identifiers in scoped records or traces rather than metric tags.
+
+Deploy optional assignment readers and telemetry before issuers or active cohorts.
+Keep the flag absent or disabled until the serving revision, ordinary-user path,
+failure behavior and exposure read-back are verified. Check the consuming backend's
+actual flag host/project separately from the frontend or personal flag UI: similarly
+named credentials can select different projects. Use protected runtime checks that
+return only identity/configuration matches, never credential values. Source or CI
+success does not prove deployment, and a successful personal test does not prove
+customer enrollment. Record unresolved project/runtime proof as pending.
+
+Freeze the control's deployed configuration and the allocation for the measurement
+window. Declare rollback behavior, including signed-assignment expiry, refresh and
+cache delays; disabling a flag need not revoke already issued decisions immediately.
