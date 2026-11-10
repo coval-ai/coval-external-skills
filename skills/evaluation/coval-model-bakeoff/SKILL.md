@@ -46,6 +46,9 @@ and effective settings separately; do not silently drop unsupported settings.
 For a pure model comparison, prevent cross-model fallback or analyze fallback
 conversations separately. Otherwise the candidate can receive credit for another
 model's answer. Evaluate production routing separately if that is also a question.
+For a live operational comparison, preserve the agreed safety fallback policy,
+analyze by assigned cohort, and report actual served models separately. Different
+service tiers make this a configuration comparison rather than a model-only effect.
 
 Reuse the customer's existing harness and resource owner. If configuration is
 managed as code, edit and plan through that owner rather than creating a competing
@@ -95,6 +98,10 @@ assertions for exact arguments, scope, side effects and factual counts. Use judg
 for qualitative behavior, with frozen rubrics and evidence-backed disagreement
 review. Transcript-only judges cannot establish executed tools or successful writes.
 
+Separate response coverage, judge coverage, verified task completion and supported
+answer accuracy. An answer that says the work is done is not an execution receipt.
+Preserve unknown outcomes when required tool results or final state are unavailable.
+
 Configure additional criteria for actual gaps. Preview against authorized known
 successes and failures within budget. Human calibration requires human labels;
 an agent's adjudication is not human validation. Missing traces, usage fields or
@@ -142,6 +149,8 @@ Report a measured recommendation, conditional recommendation or inconclusive
 result. Distinguish development performance, held-out evidence and production
 acceptance. Name untested delivery, UI, memory, scheduling and confirmed-write
 surfaces. A model recommendation does not authorize rollout.
+For an authorized live cohort experiment, follow the server-authority, assignment,
+exposure and deployment checks in [platform-workflow.md](references/platform-workflow.md).
 
 Keep a private work log of hypotheses, immutable inputs, actual commands,
 friction, corrections and evidence. Public documentation should retain reusable
