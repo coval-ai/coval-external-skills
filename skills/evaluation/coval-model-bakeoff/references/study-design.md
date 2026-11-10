@@ -38,12 +38,20 @@ from diagnostics; more metrics do not automatically provide more evidence.
 | Efficiency | Calls; input/cached/output/reasoning tokens; tool time | Include failures, avoid nested-span double count |
 | Money | Inference cost/task; cost/success; total study spend | Separate agent, simulator, judge and platform cost |
 
+Compute fleet percentiles from underlying turn samples or appropriate histograms.
+The average of per-conversation p95 values is not the p95 across all turns; label
+the native aggregation accurately rather than averaging percentiles into a tail claim.
+
 Use dated effective-provider tariffs and actual billable token categories.
 For per-million pricing: `sum(tokens_by_category * price_by_category / 1_000_000)`.
 Cached input may be a subset of input; reasoning tokens may already be included
 in output. Follow the provider's schema to avoid charging overlapping categories
 twice. Record service tier/cache assumptions. Token-derived cost is an estimate,
 distinct from provider-reported or invoiced cost. Missing pricing is not zero.
+
+Require every billable token partition, not every possible usage field. An
+input-only embedding tariff can be priced without an output count; missing a
+partition that carries a charge still leaves cost unknown.
 
 Cost per successful task includes failed-attempt costs in the numerator and
 independently judged successes in the denominator. With zero successes, show
@@ -73,6 +81,15 @@ Record attempted calls even when they fail before usage or a response arrives;
 those attempts belong in reliability denominators without invented cost or tokens.
 An HTTP success can wrap a failed stream or inner operation, so inspect terminal
 application outcomes as well as transport status.
+
+Match provenance coverage to the assistant replies actually included in the scored
+transcript, including replayed history. Missing historical evidence must not inherit
+the current cohort. Scope each chunk's call and cost summaries to those same uploaded
+rows so earlier chunks are not counted twice.
+
+Derive primary/fallback roles from actual attempt position or routing receipts,
+not a changed model name: a fallback can retain the name while changing provider or
+endpoint. Keep auxiliary model work distinct from the primary routing chain.
 
 Use the responding service's own release/source provenance. Do not fill its version
 from another service's environment variable or the latest repository commit.
