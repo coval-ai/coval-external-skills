@@ -275,16 +275,20 @@ SELECTED_VECTORS=(4 12 13)  # example only; choose numbered rows from the outcom
 existing=$(coval test-cases list --test-set-id "$TEST_SET_ID" --page-size 100 --format json \
   | jq -r '.[].description')
 
+count=$(jq 'length' "$PACK")
 for n in "${SELECTED_VECTORS[@]}"; do
-  i=$((n - 1))
-  if ! jq -e ".[$i]" "$PACK" >/dev/null; then
+  if [[ ! "$n" =~ ^[1-9][0-9]*$ ]]; then
     echo "invalid vector number: $n" >&2; exit 1
   fi
+  if (( n < 1 || n > count )); then
+    echo "invalid vector number: $n" >&2; exit 1
+  fi
+  i=$((n - 1))
   desc=$(jq -r ".[$i].description" "$PACK")
   if grep -qxF "$desc" <<< "$existing"; then
     echo "exists: $desc"; continue
   fi
-  # $i is a loop integer from seq, so it is safe to interpolate directly into the filter.
+  # $i derives from a checked numeric vector number, so filter interpolation is safe.
   # Most pack entries are SCENARIO cases (input_str drives an improvising persona). Entries
   # that carry "input_type": "SCRIPT" also carry simulation_metadata_input.script_turns and
   # must be created with both, or the scripted turns are silently dropped.
