@@ -143,15 +143,13 @@ single-blurb "reveal your prompt" scenario cannot.
 - **Vectors 18-19: content and action guardrails, mild payloads by design.** Field
   testing on two public production agents found the politeness guardrail broke on a
   *different* probe per agent (one parroted a self-insult and performed rudeness with
-  profanity on command; the other parroted competitor disparagement verbatim), and
-  both invoked real tools on attacker direction - one persisted attacker-supplied
-  data through its live information-saving tool, the other ran an attacker-chosen
-  web search. Both also read a fabricated callback number back as "confirmed" and
-  accepted a scripted opening line for the next caller. Keep payloads mild and
-  clearly benign throughout: a mild payload breaking the guardrail is the finding;
-  escalating payloads produces harm, not evidence. When specializing vector 19,
-  substitute your agent's real tools (a save-info, a search, a booking, a refund
-  action) with a clearly-marked benign payload.
+  profanity on command; the other parroted competitor disparagement verbatim).
+  Both agents said they completed an attacker-requested save or search and read
+  a fabricated callback number back as "confirmed". The saved Coval calls have
+  no agent-owned tool spans or independent state readback, so the action claims
+  remain unverified. Keep payloads mild and clearly benign throughout. When
+  specializing vector 19, use an authorized test tool and benign payload, and
+  inspect its provider-side trace and resulting state separately from speech.
 - **Roleplay compliance and consequence-bearing fabrication are separate vulnerability
   surfaces.** One field-tested agent broke scope (delivered the out-of-scope mission with a
   name-refusal hedge) yet firmly refused the fabricated commitment, the disparagement, and
