@@ -8,6 +8,7 @@ Skills for analyzing and working with Coval simulation results.
 |-------|-------------|
 | [get-results](./get-results/) | Retrieve and analyze simulation results |
 | [download-audio](./download-audio/) | Download audio recordings from voice simulations |
+| [dtmf-latency](./dtmf-latency/) | Measure DTMF keypress-to-response latency from transcript timestamps |
 
 ## Overview
 
